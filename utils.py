@@ -367,8 +367,8 @@ def _save_webp(path, bgra_icon, quality=90):
     """Сохраняет BGRA-иконку в WebP с прозрачностью через Pillow.
 
     OpenCV в части сборок теряет альфу при записи WebP, поэтому пишем через
-    Pillow — он надёжно держит прозрачность. rembg уже тянет Pillow в зависимости,
-    так что новый пакет ставить не нужно.
+    Pillow — он надёжно держит прозрачность. Pillow обязателен для конвейера
+    (отдельной зависимостью, ставится в .venv).
     """
     from PIL import Image as PILImage
     rgba = cv2.cvtColor(bgra_icon, cv2.COLOR_BGRA2RGBA)

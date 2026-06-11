@@ -1,754 +1,322 @@
-ART DIRECTION AND ITEM GENERATION SPECIFICATION
-Project Overview
-
-2D dark fantasy tactical roguelike focused on squad-based expeditions, survival, equipment progression, crafting, and tactical turn-based combat.
-
-The visual style must prioritize:
-
-readability over spectacle;
-gameplay clarity over realism;
-strong silhouettes;
-clear item recognition;
-consistent visual language across all assets.
-
-The world is harsh, grounded, and dangerous. Equipment is practical, functional, and believable.
-
-CORE VISUAL PILLARS
-1. Readability First
-
-Every generated asset must remain recognizable at gameplay scale.
-
-Requirements:
-
-strong silhouette recognition;
-clear overall shape;
-immediate visual identification;
-minimal visual noise;
-easy distinction between categories.
-
-Effects, decoration, and artistic flourishes must never reduce readability.
-
-2. Grounded Dark Fantasy
-
-The setting is low fantasy rather than high fantasy.
-
-Avoid:
-
-anime aesthetics;
-oversized weapons;
-exaggerated proportions;
-excessive magical glow;
-ornate fantasy decorations;
-unrealistic heroic designs.
-
-Prefer:
-
-practical medieval equipment;
-believable materials;
-iron, steel, leather, wood, cloth;
-realistic construction;
-functional craftsmanship.
-3. Gameplay-Oriented Asset Design
-
-Assets are gameplay elements first and illustrations second.
-
-Every icon should communicate:
-
-what the item is;
-what category it belongs to;
-how it differs from similar items.
-
-A player should identify an item type instantly without reading text.
-
-ITEM ICON PRODUCTION RULES
-Primary Goal
-
-Item icons are gameplay assets.
-
-Visual beauty is secondary to recognition speed.
-
-A player must correctly identify an item at a glance when displayed at 64×64 pixels.
-
-Canvas Requirements
-
-Background:
-
-pure white (#FFFFFF).
-
-Forbidden:
-
-grids;
-inventory slots;
-decorative frames;
-borders;
-labels;
-text;
-numbers;
-symbols;
-watermarks;
-UI elements;
-interface mockups.
-
-Only the item itself should be visible.
-
-Readability Requirements
-
-Icons must remain readable at 64×64 pixels.
-
-Requirements:
-
-strong silhouette;
-clear outline;
-recognizable shape;
-large readable forms;
-minimal clutter.
-
-Avoid:
-
-excessive decoration;
-tiny details;
-visual noise;
-microscopic engravings;
-unnecessary complexity.
-
-The item must remain recognizable from silhouette alone.
-
-Shape Language
-
-Different categories must be distinguishable primarily through shape.
-
-Recognition must never depend solely on color.
-
-Examples:
-
-Healing Potion:
-
-rounded bottle;
-stable silhouette;
-positive visual language.
-
-Poison:
-
-angular bottle;
-dangerous silhouette;
-aggressive shape language.
-
-Mana Potion:
-
-clearly different bottle shape from healing and poison.
-
-Buff Potions:
-
-unique silhouettes distinct from both healing and poison.
-
-The difference between consumables should be obvious at first glance.
-
-Weapon Recognition
-
-Weapon classes must be identifiable through silhouette.
-
-Differences must not rely only on:
-
-scale;
-color;
-rotation;
-camera angle.
-
-Each weapon category requires distinct geometry.
-
-Examples:
-
-Dagger:
-
-short;
-narrow blade.
-
-Sword:
-
-balanced proportions.
-
-Greatsword:
-
-long two-handed silhouette.
-
-Axe:
-
-dominant cutting head.
-
-Hammer:
-
-dominant striking head.
-
-Spear:
-
-long shaft;
-compact spearhead.
-
-Mace:
-
-compact impact-focused head.
-
-A player should identify weapon type instantly without reading its name.
-
-Item Condition
-
-All items are assumed to be intact and functional.
-
-Do not depict:
-
-cracks;
-broken blades;
-missing pieces;
-damaged structures;
-severe corrosion;
-heavy wear.
-
-Exceptions are allowed only when damage is explicitly mentioned in the item's name or description.
-
-Examples:
-
-Allowed:
-
-Broken Sword;
-Cracked Shield;
-Rusted Axe;
-Damaged Helmet.
-
-Not Allowed:
-
-random damage on normal equipment;
-unnecessary cracks or wear on intact items.
-Visual Focus
-
-The item should occupy most of the image.
-
-Recommended:
-
-70–90% of canvas area.
-
-Avoid:
-
-excessive empty space;
-distant framing;
-tiny objects.
-
-The object must immediately draw attention.
-
-Lighting
-
-Use neutral studio-style lighting.
-
-Avoid:
-
-dramatic shadows;
-environmental lighting;
-colored lighting;
-atmospheric fog;
-scene-based illumination.
-
-The item itself must remain clearly visible.
-
-Perspective
-
-Use a consistent perspective across all icons.
-
-Requirements:
-
-identical camera logic;
-consistent viewing angle;
-consistent visual scale.
-
-All inventory assets should appear as part of the same asset library.
-
-Materials
-
-Materials should be realistic and easily recognizable.
-
-Examples:
-
-Metal:
-
-steel;
-iron;
-bronze.
-
-Organic:
-
-leather;
-wood;
-bone;
-cloth.
-
-Materials must remain visually readable even at small icon sizes.
-
-Color Usage
-
-Color supports recognition but must never be the only identifier.
-
-Silhouette and shape remain the primary recognition tools.
-
-Examples:
-
-Healing:
-
-red accents acceptable.
-
-Poison:
-
-green accents acceptable.
-
-Mana:
-
-blue accents acceptable.
-
-However, categories must still remain distinguishable in grayscale.
-
-Consistency Requirements
-
-All generated assets must appear to belong to the same game.
-
-Requirements:
-
-consistent rendering style;
-consistent lighting;
-consistent perspective;
-consistent material treatment;
-consistent detail density;
-consistent visual quality.
-
-The complete inventory should feel like a unified professional asset set.
-
-ABSOLUTE PRIORITY ORDER
-
-When a conflict occurs, follow this priority:
-
-Readability.
-Recognition speed.
-Gameplay clarity.
-Consistency.
-Visual beauty.
-Artistic detail.
-
-Gameplay readability always takes precedence over artistic complexity.
-
-SHEET OUTPUT LAYOUT (BATCH GENERATION — for automated slicing)
-
-Items are generated several-per-image as a sheet, then a script cuts each item
-into a separate transparent icon. To make automated slicing reliable, the
-output image MUST follow these rules.
-
-Background:
-
-pure flat white (#FFFFFF) across the WHOLE image;
-no gradients;
-no texture;
-no vignette;
-no off-white or grey tint.
-
-Layout:
-
-arrange items on a regular grid (even rows and columns);
-one item per cell, centered in its cell;
-consistent cell size and consistent row height;
-wide white gutters between items AND between rows;
-items must never touch, overlap, or share an outline;
-equal empty white padding around every item.
-
-Strictly forbidden on the sheet:
-
-labels, captions, names, text, numbers, watermarks of any kind;
-drop shadows, cast shadows, ground, pedestals, or reflections under items;
-frames, grid lines, slot borders, separators between cells.
-
-Outline and contrast (critical for the cutter):
-
-every item must be clearly darker than the white background;
-every item must have a continuous, closed darker outline around its whole silhouette;
-light or metallic parts (steel blades, highlights) must stay INSIDE that outline, never bleeding into the white background;
-avoid near-white item areas that touch the background without a dark edge.
-
-Consistency:
-
-identical camera angle, lighting, and scale logic for all items on the sheet;
-the whole sheet must read as one unified asset library.
-
-Reasoning: the slicer separates each item by its silhouette, drops the white
-background to full transparency, and exports clean per-item icons. Anything
-that breaks the white gutters (shadows, labels, touching items) will corrupt
-the cut.
-
-- **Кинжал**
-  Лёгкий и быстрый клинок. Преимущественно режущий урон — высокий шанс кровотечения.
-
-- **Одноручный меч**  
-  Классический одноручный меч. Сбалансированный урон трёх типов.
-
-- **Одноручный топор**  
-  Рубящий одноручный топор. Разрез и дробь в равных долях — сочетает кровотечение и оглушение.
-
-- **Одноручная булава**  
-  Дробящая одноручная булава. Почти весь урон — дробящий, ломает броню и оглушает.
-
-- **Двуручный меч**  
-  Мощный двуручный меч. Больше урона чем одноручный, но медленнее.
-
-- **Двуручный топор**  
-  Огромный двуручный топор. Высокий урон, много разреза и дроби. Очень медленный.
-
-- **Двуручная булава**  
-  Тяжёлая двуручная булава. Дробящие удары ломают броню и часто оглушают.
-
-- **Короткий лук**  
-  Лёгкий охотничий лук. Широкий наконечник — больше разреза, меньше пронзания.  
-  Требует стрелы в слоте боеприпасов.
-
-- **Боевой лук**  
-  Мощный составной лук. Пробивает броню и наносит глубокие раны.  
-  Требует стрелы в слоте боеприпасов.
-
-- **Арбалет**  
-  Тяжёлый арбалет. Болт пробивает броню и оглушает мощным ударом.  
-  Требует болты в слоте боеприпасов.
-
-- **Охотничий нож**  
-  Охотничий нож позволяет добывать дополнительные ресурсы с животных.
-
-- **🏹 Стрелы**  
-  Стрелы для лука. Лежат в отдельной ячейке боеприпасов. Тратятся за каждый выстрел.
-
-- **🎯 Болты**  
-  Болты для арбалета. Лежат в отдельной ячейке боеприпасов. Тратятся за каждый выстрел.
-
-- **Баклер**  
-  Небольшой лёгкий щит. +1 к уклонению. Баш (контроль, без урона): дёшев (1 ОД), но без бонуса к оглушению.
-
-- **Щит**  
-  Крепкий деревянный щит с железным ободом. Баш (контроль, без урона): +10% к шансу оглушения.
-
-- **Башенный щит**  
-  Огромный башенный щит. Отличная защита, но сильно сковывает движения.  
-  Баш (контроль, без урона): +20% к шансу оглушения.
-
-- **Лёгкий доспех**  
-  Кожаный доспех. Нет штрафа к ОД. +1 к уклонению.  
-  Кровь/Оглуш: 0 | Стихии (огонь/лёд/шок): +30%
-
-- **Кольчуга**  
-  Кольчуга из стальных колец. +1 ОД к каждому действию.  
-  Каждые 3 силы снижают штраф.  
-  Кровь/Оглуш: +10% | Стихии (огонь/лёд/шок): +10%
-
-- **Латные доспехи**  
-  Полный рыцарский доспех. +2 ОД к каждому действию. −3 к уклонению.  
-  Каждые 3 силы снижают штраф.  
-  Кровь/Оглуш: +30% | Стихии (огонь/лёд/шок): −30%
-
-- **Кольцо**  
-  Простое кольцо, дающее жизненные силы.
-
-- **Амулет**  
-  Амулет, усиливающий магическую энергию.
-
-- **Зелье лечения**  
-  Восстанавливает 25 здоровья.
-
-- **Провиант**  
-  Паёк для похода. Восстанавливает 10 HP и улучшает самочувствие: снимает 1 стак усталости, или добавляет 1 стак бодрости (+1 ОД, +5 макс. HP, макс. 3). Нельзя есть в бою или при полном HP.
-
-- **🩹 Повязка**  
-  Снимает 1 стак кровотечения (1 раз в ход).
-
-- **🧪 Антидот**  
-  Снимает 1 стак отравления (1 раз в ход). Не действует на комбо-яды.
-
-- **🔥 Согревающее зелье**  
-  Снимает 1 стак заморозки (1 раз в ход).
-
-- **💫 Нашатырь**  
-  Резкий запах приводит в чувство. Снимает 1 стак оглушения (1 раз в ход). Не действует на тяжёлое оглушение.
-
-- **🧴 Мазь от ожогов**  
-  Снимает 1 стак поджога (1 раз в ход). Не действует на напалм.
-
-- **⚡ Заземляющее зелье**  
-  Снимает 1 стак шока (1 раз в ход).
-
-- **🌬️ Ветошь**  
-  Кусок материи, впитывающий влагу. Снимает 1 стак намокания (1 раз в ход).
-
-- **🛡️ Латка для брони**  
-  Восстанавливает 1 стак сломанной брони (1 раз в ход).
-
-- **💚 Малое зелье регенерации**  
-  Восстанавливает 10 HP в ход в течение 2 ходов (всего 20 HP).
-
-- **💚 Зелье регенерации**  
-  Восстанавливает 15 HP в ход в течение 2 ходов (всего 30 HP).
-
-- **💚 Большое зелье регенерации**  
-  Восстанавливает 20 HP в ход в течение 3 ходов (всего 60 HP).
-
-- **💠 Эликсир маны**  
-  Мгновенно восстанавливает 1 ячейку маны. 1 раз в ход.
-
-- **💠 Зелье регенерации маны**  
-  Восстанавливает 1 ячейку маны в ход в течение нескольких ходов. Нельзя пить повторно, пока действует.
-
-- **🛠 Слиток золота (dev)**  
-  DEV-предмет. Покупка даёт +1000 золота.
-
-- **🛠 Связка печатей (dev)**  
-  DEV-предмет. Покупка даёт +50 печатей экспедиции.
-
-- **🛠 Знание всех рецептов (dev)**  
-  DEV-предмет. При покупке ремесленник изучает все рецепты.
-
-- **🛠 Гора трофеев (dev)**  
-  DEV-предмет. Покупка добавляет +50 охотничьих трофеев (для тестов Таверны §5.10).
-
-- **📜 Свиток лечения**  
-  Восстанавливает 20 HP. Стоимость: 5 маны, откат 3 хода (−1 за каждые 3 INT).
-
-- **📜 Большой свиток лечения**  
-  Восстанавливает 40 HP. Стоимость: 5 маны, откат 3 хода (−1 за каждые 3 INT).
-
-- **📜 Свиток «Хамелеон»**  
-  Самобафф уклонения: +15% на 2 хода (пробивает кап на +10%). Стоимость: 5 маны, откат 3 хода. Self-harm: −25% к вашему урону на длительность.
-
-- **📜 Свиток «Кулак ветра»**  
-  Только в ближнем бою. Отбрасывает цель на дальнюю дистанцию (если не в ловушке) и оглушает с шансом 50%. Стоимость: 5 маны, откат 3 хода. Self-harm: магия может отскочить и оглушить вас.
-
-- **📜 Свиток «Рассеивание»**  
-  −20% ко всем DR цели на 2 хода. Накладывается без ролла резистов. Стоимость: 5 маны, откат 3 хода. Self-harm: магия может ослабить вашу защиту тем же дебаффом.
-
-- **📜 Свиток призыва**  
-  Призывает в бой зоно-уместное существо на сторону читающего. Призываемые расы зависят от расы призывателя. Стоимость: 5 маны, откат 4 хода.
-
-- **📜 Свиток «Страх»**  
-  Цель в страхе на 2 хода: разрывает дистанцию, не использует сильные атаки и свитки. Игрок не может атаковать её в ближнем бою. Шанс наложения зависит от стойкости цели. Стоимость: 5 маны, откат 3 хода. Self-harm: вы сами в страхе и не можете атаковать в ближнем бою.
-
-- **🔥 Огненная смазка**  
-  Наносится на оружие. Каждый удар добавляет огненный урон, накапливая пул горения (BURN). 5 зарядов.
-
-- **🧊 Морозная смазка**  
-  Наносится на оружие. Каждый удар добавляет урон холодом, накапливая пул заморозки (FREEZE). 5 зарядов.
-
-- **☠️ Ядовитая смазка**  
-  Наносится на оружие. Каждый удар добавляет ядовитый урон, накапливая пул отравления (POISON). 5 зарядов.
-
-- **⚡ Громовая смазка**  
-  Наносится на оружие. Каждый удар добавляет урон молнией, накапливая пул электризации (SHOCK). 5 зарядов.
-
-- **💧 Скользкая смазка**  
-  Наносится на оружие. Каждый удар добавляет водный урон, накапливая пул намокания (WET). 5 зарядов.  
-  WET само по себе слабо, но усиливает яд и молнию.
-
-- **🪤 Простая ловушка**  
-  Бросается из пояса в цель. Накладывает ROOT — цель не может менять дистанцию (FAR↔CONTACT), но атаковать со своей позиции может. Побег: слабая попытка (1 ОД, шанс растёт от max(сила, ловкость)) или силовая (2 ОД, фикс. 90%). Каждый провал прибавляет в общий пул прогресса.
-
-- **🔥🪤 Огненная ловушка**  
-  ROOT (гарантировано) + Поджог с шансом 50% (режется резистом к огню). Крафт: простая ловушка + огненная смазка + 2 кристалла.
-
-- **❄️🪤 Морозная ловушка**  
-  ROOT (гарантировано) + Заморозка с шансом 50% (режется резистом к холоду). Крафт: простая ловушка + морозная смазка + 2 кристалла.
-
-- **☠️🪤 Ядовитая ловушка**  
-  ROOT (гарантировано) + Яд с шансом 50% (режется резистом к яду). Крафт: простая ловушка + яд. смазка + 2 кристалла.
-
-- **⚡🪤 Электрическая ловушка**  
-  ROOT (гарантировано) + Шок с шансом 50% (режется резистом к молнии). Крафт: простая ловушка + элект. смазка + 2 кристалла.
-
-- **💧🪤 Маслянная ловушка**  
-  ROOT (гарантировано) + Намокание с шансом 50% (режется резистом к воде). Крафт: простая ловушка + скользкое масло + 2 кристалла.
-
-- **🔥☠️🪤 Напалмовая ловушка**  
-  ROOT (гарантировано) + Напалм с шансом 50% (режется огнеустойчивостью). Урон за каждое ОД и панические штрафы. Крафт: простая ловушка + огн. смазка + яд. смазка + 5 кристаллов.
-
-- **❄️☠️🪤 Ловушка ледяных шипов**  
-  ROOT (гарантировано) + Ядовитая крошка с шансом 50% (режется морозостойкостью). Урон за ОД и снижение уклонения. Крафт: простая ловушка + мороз. смазка + яд. смазка + 5 кристаллов.
-
-- **⚡☠️🪤 Ядовитый разряд**  
-  ROOT (гарантировано) + Ядовитый заряд с шансом 50% (режется молниеустойчивостью). Шанс самоудара за каждое действие. Крафт: простая ловушка + элект. смазка + яд. смазка + 5 кристаллов.
-
-- **💧☠️🪤 Жидкий яд**  
-  ROOT (гарантировано) + Жидкий яд с шансом 50% (режется водостойкостью). Урон за каждое потраченное ОД. Крафт: простая ловушка + скользкое масло + яд. смазка + 5 кристаллов.
-
-- **Пояс**  
-  Пояс с 5 ячейками быстрого доступа для расходников.
-
-- **🔩 Металл**  
-  Металл для изготовления снаряжения.
-
-- **🪵 Дерево**  
-  Дерево для изготовления снаряжения.
-
-- **🧵 Кожа**  
-  Кожа для изготовления снаряжения.
-
-- **🧶 Ткань**  
-  Ткань для изготовления снаряжения.
-
-- **🦴 Кость**  
-  Кость для изготовления снаряжения.
-
-- **🥩 Мясо**  
-  Мясо для приготовления провианта в лагере. Не продаётся.
-
-- **💎 Кристалл**  
-  Кристалл для магических предметов.
-
-- **📜 Чертеж Кольчуги**  
-  Позволяет ремесленнику изготовить кольчугу.
-
-- **📜 Чертеж Латных доспехов**  
-  Позволяет ремесленнику изготовить латные доспехи.
-
-- **📜 Чертеж Двуручного топора**  
-  Позволяет ремесленнику изготовить двуручный топор.
-
-- **📜 Чертеж Короткого лука**  
-  Позволяет ремесленнику изготовить короткий лук.
-
-- **📜 Чертеж Боевого лука**  
-  Позволяет ремесленнику изготовить боевой лук.
-
-- **📜 Чертеж Арбалета**  
-  Позволяет ремесленнику изготовить арбалет.
-
-- **📜 Чертеж Кольца Воина**  
-  Позволяет ремесленнику изготовить Кольцо Воина (+1 к урону и +5 к здоровью).
-
-- **📜 Чертеж Кольца Ловкача**  
-  Позволяет ремесленнику изготовить Кольцо Ловкача (+1 к урону и +5 к увороту).
-
-- **📜 Чертеж Амулета Жизни**  
-  Позволяет ремесленнику изготовить Амулет Жизни (+25 HP).
-
-- **📜 Чертеж Амулета Маны**  
-  Позволяет ремесленнику изготовить Амулет Маны (+25 маны).
-
-- **📜 Чертеж Амулета Воина**  
-  Позволяет ремесленнику изготовить Амулет Воина (+урон, +защита).
-
-- **📜 Чертеж Амулета Ловкача**  
-  Позволяет ремесленнику изготовить Амулет Ловкача (+урон, +уворот).
-
-- **📜 Чертеж Амулета Оглушения**  
-  Позволяет ремесленнику изготовить Амулет Оглушения (артефакт: пассивка +2 защиты, активка: оглушение).
-
-- **📜 Чертеж Кольца Вампира**  
-  Позволяет ремесленнику изготовить Кольцо Вампира (артефакт: пассивка 15% вампиризм, активка: 50% вампиризм).
-
-- **📜 Чертеж Огненного Самоцвета**  
-  Позволяет ремесленнику изготовить Огненный Самоцвет (артефакт: пассивка 20% огненный шанс, активка: поджог).
-
-- **📜 Чертеж Ледяного Кристалла**  
-  Позволяет ремесленнику изготовить Ледяной Кристалл (артефакт: пассивка 20% ледяной шанс, активка: заморозка).
-
-- **📜 Чертеж Ядовитого Кристалла**  
-  Позволяет ремесленнику изготовить Ядовитый Кристалл (артефакт: пассивка 20% ядовитый шанс, активка: отравление).
-
-- **📜 Чертеж Кристалла Молний**  
-  Позволяет ремесленнику изготовить Кристалл Молний (артефакт: пассивка 20% молниеносный шанс, активка: шок).
-
-- **📜 Чертеж Водяного Кристалла**  
-  Позволяет ремесленнику изготовить Водяной Кристалл (артефакт: пассивка 20% водяной шанс, активка: намокание).
-
-- **📜 Чертёж Кинжала**  
-  Позволяет ремесленнику изготовить кинжал.
-
-- **📜 Чертёж Одноручного топора**  
-  Позволяет ремесленнику изготовить одноручный топор.
-
-- **📜 Чертёж Одноручной булавы**  
-  Позволяет ремесленнику изготовить одноручную булаву.
-
-- **📜 Чертёж Двуручного меча**  
-  Позволяет ремесленнику изготовить двуручный меч.
-
-- **📜 Чертёж Двуручной булавы**  
-  Позволяет ремесленнику изготовить двуручную булаву.
-
-- **📜 Чертёж: Огненная ловушка**  
-  Ремесленник сможет изготовить огненную ловушку (trap_basic + fire_oil + crystal × 2).
-
-- **📜 Чертёж: Морозная ловушка**  
-  Ремесленник сможет изготовить морозную ловушку (trap_basic + frost_oil + crystal × 2).
-
-- **📜 Чертёж: Ядовитая ловушка**  
-  Ремесленник сможет изготовить ядовитую ловушку (trap_basic + venom_coating + crystal × 2).
-
-- **📜 Чертёж: Электрическая ловушка**  
-  Ремесленник сможет изготовить электрическую ловушку (trap_basic + shock_oil + crystal × 2).
-
-- **📜 Чертёж: Маслянная ловушка**  
-  Ремесленник сможет изготовить маслянную ловушку (trap_basic + slick_oil + crystal × 2).
-
-- **📜 Чертёж: Напалмовая ловушка**  
-  Ремесленник сможет изготовить напалмовую ловушку (trap_basic + fire_oil + venom_coating + crystal × 5).
-
-- **📜 Чертёж: Ловушка ледяных шипов**  
-  Ремесленник сможет изготовить ловушку ледяных шипов (trap_basic + frost_oil + venom_coating + crystal × 5).
-
-- **📜 Чертёж: Ядовитый разряд**  
-  Ремесленник сможет изготовить ловушку ядовитого разряда (trap_basic + shock_oil + venom_coating + crystal × 5).
-
-- **📜 Чертёж: Жидкий яд**  
-  Ремесленник сможет изготовить ловушку жидкого яда (trap_basic + slick_oil + venom_coating + crystal × 5).
-
-- **📜 Чертёж Баклера**  
-  Позволяет ремесленнику изготовить баклер.
-
-- **📜 Чертёж Башенного щита**  
-  Позволяет ремесленнику изготовить башенный щит.
-
-- **Кольцо Воина**  
-  Кольцо закалённого бойца. +10% к кровотечению, +5% к оглушению.
-
-- **Кольцо Ловкача**  
-  Кольцо проворного. Дарует грацию зверя.
-
-- **Амулет Жизни**  
-  Амулет, дарующий жизненную силу. Увеличивает запас здоровья.
-
-- **Амулет Маны**  
-  Амулет, усиливающий магическую энергию. Увеличивает запас маны.
-
-- **Амулет Воина**  
-  Амулет закалённого воина. +5% к кровотечению, +10% к оглушению.
-
-- **Амулет Ловкача**  
-  Амулет проворного разведчика. Усиливает атаки и помогает уклоняться от ударов.
-
-- **🏆 Охотничий трофей**  
-  Трофей, снятый с именного противника. Свидетельство опасного боя. Торговец скупает такие редкости — сдайте пачкой за 20 монет каждый.
-
-- **🔏 Печать экспедиции**  
-  Знак отличия покорителя глубин. Тратится на прокачку навыков экспедиции у торговца.
-
-- **📜 Свиток забвения характеристик**  
-  Сбрасывает все распределённые очки силы, ловкости и интеллекта в свободные. Применяется вне боя из окна навыков.
-
-- **📜 Свиток забвения навыков**  
-  Сбрасывает все навыки экспедиции до 0, возвращает все потраченные печати и снимает выбранные мастерские пути. Применяется вне боя из окна навыков.
-
-- **✨ Амулет Оглушения**  
-  Пассивка: +2 защиты. Активка: оглушение врага (3 стака, 1 ход). Кулдаун 3 хода. Риск: оглушение себя.
-
-- **✨ Кольцо Вампира**  
-  Пассивка: 40% шанс на удачный удар восстановить 60% урона оружия. Активка: высасывание — наносит и лечит на 50% от недостающего HP игрока. Кулдаун 4 хода. Риск: кровотечение.
-
-- **✨ Огненный Самоцвет**  
-  Пассивка: каждая атака наносит дополнительный огненный урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул поджога (порог 12). Активка: 3 стака BURN. Кулдаун 3 хода. Риск: ожог себя.
-
-- **✨ Ледяной Кристалл**  
-  Пассивка: каждая атака наносит дополнительный ледяной урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул заморозки (порог 12). Активка: 3 стака FREEZE. Кулдаун 3 хода. Риск: заморозка себя.
-
-- **✨ Ядовитый Кристалл**  
-  Пассивка: каждая атака наносит дополнительный ядовитый урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул отравления (порог 10). Активка: 3 стака POISON, 3 хода. Кулдаун 3 хода. Риск: отравление себя.
-
-- **✨ Кристалл Молний**  
-  Пассивка: каждая атака наносит дополнительный молниеносный урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул шока (порог 15). Активка: 3 стака SHOCK — −10 маны/стак или −5 HP. Кулдаун 3 хода. Риск: шок себя.
-
-- **✨ Водяной Кристалл**  
-  Пассивка: каждая атака наносит дополнительный водяной урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул намокания (порог 10). Активка: 2 стака WET — −30% DR к молнии и яду. Кулдаун 3 хода. Риск: намокание себя.
+ITEM ICON GENERATION — UNAMBIGUOUS PROMPT
+==========================================
+
+RU — как пользоваться:
+  - PART 1 (стиль) копируется в КАЖДЫЙ запрос к нейросети.
+  - PART 2 — каталог по ЛИСТАМ. Один лист = один запрос = одна картинка. Делай по одному за раз.
+  - Порядок предметов внутри листа = порядок нарезки. Не менять, ячейки не пропускать.
+  - (slug) в конце строки — для связи иконка <-> предмет (item_registry.gd). Нейросети он не нужен.
+  - Здесь ТОЛЬКО внешний вид. Механика (урон, ОД, эффекты) живёт в item_registry.gd.
+
+==================================================================
+PART 1 — STYLE (copy this whole part into every request)
+==================================================================
+
+1. WHAT THIS IS
+- These are inventory item icons for a 2D dark-fantasy game.
+- You draw several items together on one sheet (a grid). Each item sits alone in its own cell.
+
+2. RENDERING STYLE — Darkest Dungeon
+- 2D hand-painted illustration in the Darkest Dungeon style.
+- One heavy, dark, continuous ink outline around the whole item.
+- Flat, even lighting. The same light direction for every item.
+- Painterly, gritty texture. A muted, grim, desaturated palette.
+- Slightly exaggerated, stylized proportions.
+- This is a painted 2D icon. It is not a photo. It is not a 3D render.
+
+3. READABILITY — the icon is shown at 64x64 pixels
+- The item is recognized instantly from its silhouette alone at 64x64.
+- Exaggerate the one shape that defines the item. Make that feature big and obvious.
+- Use large, bold forms. No tiny details, no fine engraving, no clutter.
+- A player names the item at a glance, with zero hesitation.
+
+4. EVERY ITEM IS A DIFFERENT THING
+- Every item reads as a clearly different object from every other item.
+- Two items are never the same thing at two sizes. Change the shape, not just the scale.
+- Leave no room to wonder "sword or dagger? potion or oil? poison or regen?".
+
+5. COLOR LAW — use these exact meanings everywhere
+- Health and healing = red.
+- Mana = blue.
+- Poison = green.
+- Fire = orange.
+- Frost and cold = pale cyan.
+- Shock and lightning = yellow.
+- Water and wet = teal.
+- Stun = white.
+- Color supports recognition. Shape carries it: the silhouette alone already tells the category.
+
+6. CONDITION
+- Every item is intact, clean and functional. No cracks, no broken parts, no rust, no heavy wear.
+
+7. CANVAS AND BACKGROUND
+- Pure flat white background (#FFFFFF) across the whole image. No gradient, no texture, no tint.
+- The item fills about 70 to 90 percent of its cell, centered.
+- A real see-through hole in an item (the inside of a ring) is filled with the same pure white.
+
+8. SHEET LAYOUT — the image is a grid of items; a script cuts each one out
+- Arrange the items on a regular grid: equal cell size, equal column width, equal row height.
+- One item per cell, centered in its cell.
+- Wide white gutters between items and between rows. A gutter is at least 25 percent of a cell.
+- Items never touch, never overlap, never share an outline, not even at the corners.
+- The same number of items in every row. Fill the grid in order. Empty cells go only at the bottom-right.
+- Reading order is left-to-right, then top-to-bottom. The script numbers icons in this order.
+
+9. LONG ITEMS GO DIAGONAL
+- Draw every long, thin item at a 45-degree diagonal: blades, shafts, bows, arrows, bolts.
+- No item is more than 3 times longer in one direction than the other. The diagonal keeps it square.
+
+10. OUTLINE AND CONTRAST — the cutter needs this
+- Every item is clearly darker than the white background.
+- Every item has one continuous, closed, dark outline around its whole silhouette.
+- All bright or metallic parts (steel blades, highlights) stay inside that dark outline.
+- No part of the item fades to near-white where it meets the background.
+
+11. FORBIDDEN — never draw any of these
+- Text, letters, numbers, names, labels, captions, watermarks.
+- Drop shadows, cast shadows, ground, pedestals, reflections under the item.
+- Frames, borders, grid lines, slot outlines, separators.
+- Background scenery, props, hands, characters.
+
+==================================================================
+PART 2 — ITEM CATALOG (one SHEET = one request = one image)
+==================================================================
+
+----------------------------------------------------------------
+SHEET 1 — MELEE WEAPONS (8 items)
+----------------------------------------------------------------
+1. Dagger — a kukri: one short, strongly CURVED cutting blade. Exaggerate the curve. Clearly not a small sword. Draw diagonally. (dagger)
+2. One-handed sword — a knightly arming sword: a STRAIGHT double-edged blade, a straight crossguard, a round pommel. Medium length. Draw diagonally. (one_handed_sword)
+3. One-handed axe — a viking hand axe: ONE bearded blade on a short wooden haft. (one_handed_axe)
+4. One-handed mace — a flanged mace: a short haft topped with a head of raised vertical metal FLANGES. (one_handed_mace)
+5. Two-handed sword — a zweihander: a very long blade, a LONG two-hand grip, a big guard, and two side PARRYING HOOKS jutting out below the guard. Exaggerate the hooks. Draw diagonally. (two_handed_sword)
+6. Two-handed axe — a dane axe: ONE wide, sweeping CRESCENT blade on a long two-hand haft. Exaggerate the blade sweep. Draw diagonally. (two_handed_axe)
+7. Two-handed maul — a great war hammer: a large, BLOCKY square hammer head on a long two-hand haft. A hammer head, not a ball. Draw diagonally. (two_handed_mace)
+8. Hunting knife — a skinning knife: a short straight blade with a curved belly and a fat wooden handle. A plain tool, smaller and simpler than the dagger. (hunting_knife)
+
+----------------------------------------------------------------
+SHEET 2 — RANGED WEAPONS AND AMMO (5 items) — draw every one DIAGONALLY
+----------------------------------------------------------------
+1. Short bow — a plain wooden selfbow: ONE simple smooth arc, no ornament. Small. (short_bow)
+2. War bow — a recurve composite bow: the limb tips curve back into an S-shape. Exaggerate the S-curve. Larger than the short bow. (war_bow)
+3. Crossbow — a horizontal crossbow: a wooden stock with a steel bow-arm across the front, forming a T cross shape. (crossbow)
+4. Arrows — a tied bundle of long arrows: thin wooden shafts, steel broadhead tips, feather fletching. (arrows)
+5. Bolts — a tied bundle of short crossbow bolts: thick stubby shafts, heavy square tips. Clearly shorter and chunkier than the arrows. (bolts)
+
+----------------------------------------------------------------
+SHEET 3 — SHIELDS (3 items)
+----------------------------------------------------------------
+1. Buckler — a small round steel shield with one central boss. The smallest shield. (buckler)
+2. Shield — a medium wooden round shield with an iron rim, a central boss, visible planks. (shield)
+3. Tower shield — a tall rectangular shield, iron-banded wood, big enough to cover a body. The largest. (tower_shield)
+
+----------------------------------------------------------------
+SHEET 4 — ARMOR AND BELT (4 items)
+----------------------------------------------------------------
+1. Light armor — a brown studded-leather chest piece. Soft, light, visible stitching. (light_armor)
+2. Chainmail — a chest piece of interlocking steel rings. Grey metallic ring-mesh texture. (chainmail)
+3. Plate armor — a full steel breastplate with shoulder plates. Polished hard plates. The heaviest. (plate_armor)
+4. Belt — a wide leather waist belt with a metal buckle and several small pouches. (reinforced_belt)
+
+----------------------------------------------------------------
+SHEET 5 — RINGS AND AMULETS (8 items)
+----------------------------------------------------------------
+1. Ring — a plain metal band with one small clear gem. The simplest ring. (ring)
+2. Ring of the Warrior — a heavy iron band with blunt square shoulders and a dark RED gem. (ring_of_strength)
+3. Ring of the Trickster — a thin twisting silver band with a small GREEN gem. (ring_of_dexterity)
+4. Amulet — a plain round metal medallion on a cord, with one small gem. The simplest amulet. (amulet)
+5. Amulet of Life — a pendant with a deep RED heart-shaped gem in a gold setting. (amulet_of_life)
+6. Amulet of Mana — a pendant with a glowing BLUE crystal in a silver setting. (amulet_of_mana)
+7. Amulet of the Warrior — a pendant shaped like a small steel shield crest, dark metal. (amulet_of_warrior)
+8. Amulet of the Scout — a pendant shaped like a bronze feather. (amulet_of_scout)
+
+----------------------------------------------------------------
+SHEET 6 — MAGICAL ARTIFACTS (7 items) — each has a faint inner glow
+----------------------------------------------------------------
+1. Stun Amulet — a pendant holding a WHITE-gold gem with a radiant starburst glow. (stun_amulet)
+2. Vampiric Ring — a dark silver ring holding a blood-RED gem with a red glow. (vampiric_ring)
+3. Fire Gem — a faceted ORANGE crystal with an ember glow. (fire_gem)
+4. Frost Crystal — an angular pale-CYAN ice crystal with a cold glow. (frost_crystal)
+5. Poison Crystal — a jagged GREEN crystal with a sickly glow. (poison_crystal)
+6. Lightning Crystal — a sharp YELLOW crystal with an electric glow. (lightning_crystal)
+7. Water Crystal — a smooth TEAL crystal with a watery glow. (water_crystal)
+
+----------------------------------------------------------------
+SHEET 7 — POTIONS, HP AND MANA (6 items) — glass bottles of liquid
+----------------------------------------------------------------
+1. Healing potion — a ROUND stubby bottle of RED liquid, cork stopper. (healing_potion)
+2. Small regen potion — a TALL round-shouldered bottle of RED liquid. The smallest of the three. (regen_potion_small)
+3. Regen potion — the same TALL red bottle, medium size. (regen_potion)
+4. Large regen potion — the same TALL red bottle, the largest size. (regen_potion_large)
+5. Mana vial — a small slim vial of glowing BLUE liquid. (mana_vial)
+6. Mana brew — a wide round flask of BLUE liquid. Fatter than the mana vial. (mana_brew)
+
+----------------------------------------------------------------
+SHEET 8 — STATUS CURES (8 items) — each is a different object
+----------------------------------------------------------------
+1. Antidote — a small round vial of GREEN liquid. (antidote)
+2. Warming flask — a flask of glowing ORANGE liquid. (warming_potion)
+3. Grounding flask — a flask of muddy BROWN liquid. (static_dampener)
+4. Smelling salts — a tiny stoppered bottle with a wisp of WHITE vapor rising from it. (sedative)
+5. Burn salve — a squat round JAR with a lid, holding pale cream paste. (burn_salve)
+6. Dry cloth — a folded dry cloth rag. (dry_cloth)
+7. Bandage — a roll of white linen bandage. (bandage)
+8. Armor patch — a small riveted metal-and-leather repair patch. (armor_patch)
+
+----------------------------------------------------------------
+SHEET 9 — WEAPON OILS AND COATINGS (5 items)
+every one is the SAME container: a flat corked flask with a small brush tied to it.
+The brush makes them clearly NOT drinks.
+----------------------------------------------------------------
+1. Fire oil — flat brush-flask of ORANGE oil. (fire_oil)
+2. Frost oil — flat brush-flask of pale-CYAN oil. (frost_oil)
+3. Venom coating — flat brush-flask of GREEN oil. (venom_coating)
+4. Shock oil — flat brush-flask of YELLOW oil. (shock_oil)
+5. Slick oil — flat brush-flask of clear GREY oil. (slick_oil)
+
+----------------------------------------------------------------
+SHEET 10 — TRAPS (10 items)
+every one is the SAME object: an iron spring jaw-trap (bear-trap) seen from above.
+The element is shown only by color. Combo traps use two colors.
+----------------------------------------------------------------
+1. Basic trap — a bare grey iron jaw-trap, no color. (trap_basic)
+2. Fire trap — an iron jaw-trap coated ORANGE. (trap_fire)
+3. Frost trap — an iron jaw-trap coated pale-CYAN. (trap_frost)
+4. Venom trap — an iron jaw-trap coated GREEN. (trap_venom)
+5. Shock trap — an iron jaw-trap coated YELLOW. (trap_shock)
+6. Oil trap — an iron jaw-trap with a glossy clear-grey sheen. (trap_wet)
+7. Napalm trap — an iron jaw-trap coated ORANGE and GREEN. (trap_napalm)
+8. Ice-shard trap — an iron jaw-trap coated CYAN and GREEN. (trap_shards)
+9. Charged-venom trap — an iron jaw-trap coated YELLOW and GREEN. (trap_charged)
+10. Liquid-poison trap — an iron jaw-trap coated TEAL and GREEN. (trap_liquid)
+
+----------------------------------------------------------------
+SHEET 11 — SCROLLS (9 items)
+every one is the SAME object: a partly-unrolled parchment scroll.
+Each scroll shows ONE big, bold, simple symbol in its center, plus a colored ribbon.
+The symbol is the only thing that differs.
+----------------------------------------------------------------
+1. Healing scroll — parchment with a RED cross symbol, green ribbon. (healing_scroll_minor)
+2. Greater healing scroll — parchment with a RED double-cross symbol, gold ribbon. (healing_scroll_major)
+3. Chameleon scroll — parchment with a faded outline-of-a-figure symbol, grey ribbon. (scroll_chameleon)
+4. Wind Fist scroll — parchment with a swirling spiral-gust symbol, pale-blue ribbon. (scroll_wind_fist)
+5. Dispel scroll — parchment with a cracked broken-rune symbol, grey ribbon. (scroll_dispel)
+6. Summon scroll — parchment with a summoning-circle symbol, dark ribbon. (scroll_summon)
+7. Fear scroll — parchment with a screaming-skull symbol, purple ribbon. (scroll_fear)
+8. Stat respec scroll — parchment with an hourglass symbol, white ribbon. (scroll_respec_stats)
+9. Skill respec scroll — parchment with a branching-tree symbol, brown ribbon. (scroll_respec_skills)
+
+----------------------------------------------------------------
+SHEET 12 — RESOURCES AND SUNDRIES (10 items) — distinct everyday objects
+----------------------------------------------------------------
+1. Iron — a small stack of grey metal ingots. (iron)
+2. Wood — a small bundle of cut wooden logs. (wood)
+3. Leather — a rolled piece of brown tanned hide. (leather)
+4. Cloth — a folded bolt of grey fabric. (cloth)
+5. Bone — a few pale bones tied together. (bone)
+6. Meat — a raw red cut of meat. (meat)
+7. Crystal — a raw colorless quartz cluster, no glow. Plainer than the magical crystals. (crystal)
+8. Rations — a bundle of wrapped bread and dried meat. (ration)
+9. Expedition seal — a round wax-and-metal seal medallion with a short ribbon. (expedition_seal)
+10. Hunting trophy — a mounted animal skull on a small wooden plaque. (named_trophy)
+
+----------------------------------------------------------------
+NO ART NEEDED — do NOT generate these as unique icons
+----------------------------------------------------------------
+- BLUEPRINTS / RECIPES (35 items, slugs blueprint_*): one shared icon — a rolled technical
+  drawing on parchment with faint schematic lines. Use that same one icon for every recipe.
+  Do not draw 35 separate scrolls.
+- DEV / CHEAT items (4 items, slugs cheat_*): no art. Use a plain wrench-symbol placeholder.
+
+==================================================================
+PART 3 — STATUS / EFFECT ICONS (different from items — read this)
+==================================================================
+
+RU: статусы висят маленькими значками на портретах. Генерим крупно (как предметы),
+потом обработчик сожмёт до 24-48px. Поэтому символ должен ПЕРЕЖИВАТЬ сильное сжатие.
+slug в скобках мапится на icon_registry.gd (значки статусов), не на предметы.
+
+STATUS RULES (these replace the "item shape" rules; PART 1 style, color law,
+white background and sheet-layout rules still apply):
+- A status icon is ONE bold SYMBOL or emblem, not an object scene.
+- It will be shrunk to 24-48px. It must NOT turn to mush. Use thick chunky shapes,
+  one strong silhouette, heavy outline, high contrast. No thin lines, no small parts,
+  no fine detail. The symbol fills the cell.
+- Color follows the COLOR LAW from PART 1. The symbol shape alone already tells which status.
+- HEAVY rule: a HEAVY status is the SAME base symbol, amped up — drawn bigger and bolder,
+  with one bright RED accent mark added. Same symbol, stronger reading.
+- COMBO rule: a combo-poison is the GREEN poison color blended with one element color,
+  on a symbol that merges the two.
+
+----------------------------------------------------------------
+STATUS SHEET 1 — ELEMENTAL DAMAGE-OVER-TIME (6 items)
+----------------------------------------------------------------
+1. Burn — a bold ORANGE flame symbol. (burn)
+2. Poison — a bold GREEN skull symbol. (poison)
+3. Bleed — a single bold RED blood droplet. (bleed)
+4. Freeze — a bold CYAN snowflake symbol. (freeze)
+5. Shock — a bold YELLOW lightning bolt. (shock)
+6. Wet — a bold TEAL water splash/wave. (wet)
+
+----------------------------------------------------------------
+STATUS SHEET 2 — COMBO POISONS (4 items) — green poison blended with one element
+----------------------------------------------------------------
+1. Napalm — an ORANGE flame fused with GREEN toxic. (napalm)
+2. Poison shards — a CYAN ice shard fused with GREEN toxic. (poison_shards)
+3. Poison charge — a YELLOW lightning bolt fused with GREEN toxic. (poison_charge)
+4. Liquid poison — a TEAL water drop fused with GREEN toxic. (liquid_poison)
+
+----------------------------------------------------------------
+STATUS SHEET 3 — CONTROL AND DEBUFFS (6 items)
+----------------------------------------------------------------
+1. Stun — a ring of WHITE spinning stars. (stun)
+2. Root — a grey iron shackle-and-chain symbol. (root)
+3. Fear — a PURPLE wide-eyed screaming face. (fear)
+4. Armor break — a grey cracked breastplate symbol. (armor_break)
+5. Attack penalty — a grey sword with a red DOWN-arrow. (attack_penalty)
+6. Melee blocked — a grey sword crossed out by a red circle-slash. (melee_blocked)
+
+----------------------------------------------------------------
+STATUS SHEET 4 — BUFFS AND UTILITY (5 items)
+----------------------------------------------------------------
+1. HP regen — a RED heart with a small up-arrow, gentle glow. (regen_hp)
+2. Mana regen — a BLUE diamond with a small up-arrow, gentle glow. (regen_mp)
+3. Defense bonus — a grey steel shield with a glow. (defense_bonus)
+4. Chameleon — a faded half-transparent figure outline. (chameleon)
+5. Dispel — a grey rune shattering apart. (dispel)
+
+----------------------------------------------------------------
+STATUS SHEET 5 — HEAVY VERSIONS (7 items) — apply the HEAVY rule above to each base symbol
+----------------------------------------------------------------
+1. Heavy stun — the white stars symbol, amped. (stun_heavy)
+2. Heavy bleed — the red blood droplet, amped. (bleed_heavy)
+3. Heavy burn — the orange flame, amped. (burn_heavy)
+4. Heavy freeze — the cyan snowflake, amped. (freeze_heavy)
+5. Heavy shock — the yellow bolt, amped. (shock_heavy)
+6. Heavy wet — the teal splash, amped. (wet_heavy)
+7. Shattered armor — the cracked breastplate, broken into more pieces. (armor_break_heavy)
+
+----------------------------------------------------------------
+STATUS SHEET 6 — CAMP STATES (2 items)
+----------------------------------------------------------------
+1. Fatigue — a grey drooping "Zzz" sleep symbol. (fatigue)
+2. Vigor — a bright GOLD upward energy spark. (vigor)
+
+----------------------------------------------------------------
+STATUS SHEET 7 — DAMAGE TYPES (4 items) — base icons for the resist system
+----------------------------------------------------------------
+1. Physical — grey crossed swords. (physical)
+2. Slash — a single bold grey diagonal blade-cut. (slash)
+3. Pierce — a bold grey arrowhead/spike. (pierce)
+4. Blunt — a bold grey hammer-impact burst. (blunt)
+
+----------------------------------------------------------------
+RESIST MODIFIER BADGES (3 items) — the engine overlays one of these on a type icon
+----------------------------------------------------------------
+each is a small standalone badge on white, centered, no element color of its own:
+1. Immune — a solid BLUE-white shield badge. (frame_immune)
+2. Resist — a grey half-shield badge. (frame_resist)
+3. Weak — a red cracked badge with a small down-arrow. (frame_weak)
+
+Note: status/type/badge slugs are derived from the EffectType enum and icon_registry.gd.
+Reconcile them with the exact icon_registry.gd keys when wiring the rename step.
