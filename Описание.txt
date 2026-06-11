@@ -1,0 +1,754 @@
+ART DIRECTION AND ITEM GENERATION SPECIFICATION
+Project Overview
+
+2D dark fantasy tactical roguelike focused on squad-based expeditions, survival, equipment progression, crafting, and tactical turn-based combat.
+
+The visual style must prioritize:
+
+readability over spectacle;
+gameplay clarity over realism;
+strong silhouettes;
+clear item recognition;
+consistent visual language across all assets.
+
+The world is harsh, grounded, and dangerous. Equipment is practical, functional, and believable.
+
+CORE VISUAL PILLARS
+1. Readability First
+
+Every generated asset must remain recognizable at gameplay scale.
+
+Requirements:
+
+strong silhouette recognition;
+clear overall shape;
+immediate visual identification;
+minimal visual noise;
+easy distinction between categories.
+
+Effects, decoration, and artistic flourishes must never reduce readability.
+
+2. Grounded Dark Fantasy
+
+The setting is low fantasy rather than high fantasy.
+
+Avoid:
+
+anime aesthetics;
+oversized weapons;
+exaggerated proportions;
+excessive magical glow;
+ornate fantasy decorations;
+unrealistic heroic designs.
+
+Prefer:
+
+practical medieval equipment;
+believable materials;
+iron, steel, leather, wood, cloth;
+realistic construction;
+functional craftsmanship.
+3. Gameplay-Oriented Asset Design
+
+Assets are gameplay elements first and illustrations second.
+
+Every icon should communicate:
+
+what the item is;
+what category it belongs to;
+how it differs from similar items.
+
+A player should identify an item type instantly without reading text.
+
+ITEM ICON PRODUCTION RULES
+Primary Goal
+
+Item icons are gameplay assets.
+
+Visual beauty is secondary to recognition speed.
+
+A player must correctly identify an item at a glance when displayed at 64×64 pixels.
+
+Canvas Requirements
+
+Background:
+
+pure white (#FFFFFF).
+
+Forbidden:
+
+grids;
+inventory slots;
+decorative frames;
+borders;
+labels;
+text;
+numbers;
+symbols;
+watermarks;
+UI elements;
+interface mockups.
+
+Only the item itself should be visible.
+
+Readability Requirements
+
+Icons must remain readable at 64×64 pixels.
+
+Requirements:
+
+strong silhouette;
+clear outline;
+recognizable shape;
+large readable forms;
+minimal clutter.
+
+Avoid:
+
+excessive decoration;
+tiny details;
+visual noise;
+microscopic engravings;
+unnecessary complexity.
+
+The item must remain recognizable from silhouette alone.
+
+Shape Language
+
+Different categories must be distinguishable primarily through shape.
+
+Recognition must never depend solely on color.
+
+Examples:
+
+Healing Potion:
+
+rounded bottle;
+stable silhouette;
+positive visual language.
+
+Poison:
+
+angular bottle;
+dangerous silhouette;
+aggressive shape language.
+
+Mana Potion:
+
+clearly different bottle shape from healing and poison.
+
+Buff Potions:
+
+unique silhouettes distinct from both healing and poison.
+
+The difference between consumables should be obvious at first glance.
+
+Weapon Recognition
+
+Weapon classes must be identifiable through silhouette.
+
+Differences must not rely only on:
+
+scale;
+color;
+rotation;
+camera angle.
+
+Each weapon category requires distinct geometry.
+
+Examples:
+
+Dagger:
+
+short;
+narrow blade.
+
+Sword:
+
+balanced proportions.
+
+Greatsword:
+
+long two-handed silhouette.
+
+Axe:
+
+dominant cutting head.
+
+Hammer:
+
+dominant striking head.
+
+Spear:
+
+long shaft;
+compact spearhead.
+
+Mace:
+
+compact impact-focused head.
+
+A player should identify weapon type instantly without reading its name.
+
+Item Condition
+
+All items are assumed to be intact and functional.
+
+Do not depict:
+
+cracks;
+broken blades;
+missing pieces;
+damaged structures;
+severe corrosion;
+heavy wear.
+
+Exceptions are allowed only when damage is explicitly mentioned in the item's name or description.
+
+Examples:
+
+Allowed:
+
+Broken Sword;
+Cracked Shield;
+Rusted Axe;
+Damaged Helmet.
+
+Not Allowed:
+
+random damage on normal equipment;
+unnecessary cracks or wear on intact items.
+Visual Focus
+
+The item should occupy most of the image.
+
+Recommended:
+
+70–90% of canvas area.
+
+Avoid:
+
+excessive empty space;
+distant framing;
+tiny objects.
+
+The object must immediately draw attention.
+
+Lighting
+
+Use neutral studio-style lighting.
+
+Avoid:
+
+dramatic shadows;
+environmental lighting;
+colored lighting;
+atmospheric fog;
+scene-based illumination.
+
+The item itself must remain clearly visible.
+
+Perspective
+
+Use a consistent perspective across all icons.
+
+Requirements:
+
+identical camera logic;
+consistent viewing angle;
+consistent visual scale.
+
+All inventory assets should appear as part of the same asset library.
+
+Materials
+
+Materials should be realistic and easily recognizable.
+
+Examples:
+
+Metal:
+
+steel;
+iron;
+bronze.
+
+Organic:
+
+leather;
+wood;
+bone;
+cloth.
+
+Materials must remain visually readable even at small icon sizes.
+
+Color Usage
+
+Color supports recognition but must never be the only identifier.
+
+Silhouette and shape remain the primary recognition tools.
+
+Examples:
+
+Healing:
+
+red accents acceptable.
+
+Poison:
+
+green accents acceptable.
+
+Mana:
+
+blue accents acceptable.
+
+However, categories must still remain distinguishable in grayscale.
+
+Consistency Requirements
+
+All generated assets must appear to belong to the same game.
+
+Requirements:
+
+consistent rendering style;
+consistent lighting;
+consistent perspective;
+consistent material treatment;
+consistent detail density;
+consistent visual quality.
+
+The complete inventory should feel like a unified professional asset set.
+
+ABSOLUTE PRIORITY ORDER
+
+When a conflict occurs, follow this priority:
+
+Readability.
+Recognition speed.
+Gameplay clarity.
+Consistency.
+Visual beauty.
+Artistic detail.
+
+Gameplay readability always takes precedence over artistic complexity.
+
+SHEET OUTPUT LAYOUT (BATCH GENERATION — for automated slicing)
+
+Items are generated several-per-image as a sheet, then a script cuts each item
+into a separate transparent icon. To make automated slicing reliable, the
+output image MUST follow these rules.
+
+Background:
+
+pure flat white (#FFFFFF) across the WHOLE image;
+no gradients;
+no texture;
+no vignette;
+no off-white or grey tint.
+
+Layout:
+
+arrange items on a regular grid (even rows and columns);
+one item per cell, centered in its cell;
+consistent cell size and consistent row height;
+wide white gutters between items AND between rows;
+items must never touch, overlap, or share an outline;
+equal empty white padding around every item.
+
+Strictly forbidden on the sheet:
+
+labels, captions, names, text, numbers, watermarks of any kind;
+drop shadows, cast shadows, ground, pedestals, or reflections under items;
+frames, grid lines, slot borders, separators between cells.
+
+Outline and contrast (critical for the cutter):
+
+every item must be clearly darker than the white background;
+every item must have a continuous, closed darker outline around its whole silhouette;
+light or metallic parts (steel blades, highlights) must stay INSIDE that outline, never bleeding into the white background;
+avoid near-white item areas that touch the background without a dark edge.
+
+Consistency:
+
+identical camera angle, lighting, and scale logic for all items on the sheet;
+the whole sheet must read as one unified asset library.
+
+Reasoning: the slicer separates each item by its silhouette, drops the white
+background to full transparency, and exports clean per-item icons. Anything
+that breaks the white gutters (shadows, labels, touching items) will corrupt
+the cut.
+
+- **Кинжал**
+  Лёгкий и быстрый клинок. Преимущественно режущий урон — высокий шанс кровотечения.
+
+- **Одноручный меч**  
+  Классический одноручный меч. Сбалансированный урон трёх типов.
+
+- **Одноручный топор**  
+  Рубящий одноручный топор. Разрез и дробь в равных долях — сочетает кровотечение и оглушение.
+
+- **Одноручная булава**  
+  Дробящая одноручная булава. Почти весь урон — дробящий, ломает броню и оглушает.
+
+- **Двуручный меч**  
+  Мощный двуручный меч. Больше урона чем одноручный, но медленнее.
+
+- **Двуручный топор**  
+  Огромный двуручный топор. Высокий урон, много разреза и дроби. Очень медленный.
+
+- **Двуручная булава**  
+  Тяжёлая двуручная булава. Дробящие удары ломают броню и часто оглушают.
+
+- **Короткий лук**  
+  Лёгкий охотничий лук. Широкий наконечник — больше разреза, меньше пронзания.  
+  Требует стрелы в слоте боеприпасов.
+
+- **Боевой лук**  
+  Мощный составной лук. Пробивает броню и наносит глубокие раны.  
+  Требует стрелы в слоте боеприпасов.
+
+- **Арбалет**  
+  Тяжёлый арбалет. Болт пробивает броню и оглушает мощным ударом.  
+  Требует болты в слоте боеприпасов.
+
+- **Охотничий нож**  
+  Охотничий нож позволяет добывать дополнительные ресурсы с животных.
+
+- **🏹 Стрелы**  
+  Стрелы для лука. Лежат в отдельной ячейке боеприпасов. Тратятся за каждый выстрел.
+
+- **🎯 Болты**  
+  Болты для арбалета. Лежат в отдельной ячейке боеприпасов. Тратятся за каждый выстрел.
+
+- **Баклер**  
+  Небольшой лёгкий щит. +1 к уклонению. Баш (контроль, без урона): дёшев (1 ОД), но без бонуса к оглушению.
+
+- **Щит**  
+  Крепкий деревянный щит с железным ободом. Баш (контроль, без урона): +10% к шансу оглушения.
+
+- **Башенный щит**  
+  Огромный башенный щит. Отличная защита, но сильно сковывает движения.  
+  Баш (контроль, без урона): +20% к шансу оглушения.
+
+- **Лёгкий доспех**  
+  Кожаный доспех. Нет штрафа к ОД. +1 к уклонению.  
+  Кровь/Оглуш: 0 | Стихии (огонь/лёд/шок): +30%
+
+- **Кольчуга**  
+  Кольчуга из стальных колец. +1 ОД к каждому действию.  
+  Каждые 3 силы снижают штраф.  
+  Кровь/Оглуш: +10% | Стихии (огонь/лёд/шок): +10%
+
+- **Латные доспехи**  
+  Полный рыцарский доспех. +2 ОД к каждому действию. −3 к уклонению.  
+  Каждые 3 силы снижают штраф.  
+  Кровь/Оглуш: +30% | Стихии (огонь/лёд/шок): −30%
+
+- **Кольцо**  
+  Простое кольцо, дающее жизненные силы.
+
+- **Амулет**  
+  Амулет, усиливающий магическую энергию.
+
+- **Зелье лечения**  
+  Восстанавливает 25 здоровья.
+
+- **Провиант**  
+  Паёк для похода. Восстанавливает 10 HP и улучшает самочувствие: снимает 1 стак усталости, или добавляет 1 стак бодрости (+1 ОД, +5 макс. HP, макс. 3). Нельзя есть в бою или при полном HP.
+
+- **🩹 Повязка**  
+  Снимает 1 стак кровотечения (1 раз в ход).
+
+- **🧪 Антидот**  
+  Снимает 1 стак отравления (1 раз в ход). Не действует на комбо-яды.
+
+- **🔥 Согревающее зелье**  
+  Снимает 1 стак заморозки (1 раз в ход).
+
+- **💫 Нашатырь**  
+  Резкий запах приводит в чувство. Снимает 1 стак оглушения (1 раз в ход). Не действует на тяжёлое оглушение.
+
+- **🧴 Мазь от ожогов**  
+  Снимает 1 стак поджога (1 раз в ход). Не действует на напалм.
+
+- **⚡ Заземляющее зелье**  
+  Снимает 1 стак шока (1 раз в ход).
+
+- **🌬️ Ветошь**  
+  Кусок материи, впитывающий влагу. Снимает 1 стак намокания (1 раз в ход).
+
+- **🛡️ Латка для брони**  
+  Восстанавливает 1 стак сломанной брони (1 раз в ход).
+
+- **💚 Малое зелье регенерации**  
+  Восстанавливает 10 HP в ход в течение 2 ходов (всего 20 HP).
+
+- **💚 Зелье регенерации**  
+  Восстанавливает 15 HP в ход в течение 2 ходов (всего 30 HP).
+
+- **💚 Большое зелье регенерации**  
+  Восстанавливает 20 HP в ход в течение 3 ходов (всего 60 HP).
+
+- **💠 Эликсир маны**  
+  Мгновенно восстанавливает 1 ячейку маны. 1 раз в ход.
+
+- **💠 Зелье регенерации маны**  
+  Восстанавливает 1 ячейку маны в ход в течение нескольких ходов. Нельзя пить повторно, пока действует.
+
+- **🛠 Слиток золота (dev)**  
+  DEV-предмет. Покупка даёт +1000 золота.
+
+- **🛠 Связка печатей (dev)**  
+  DEV-предмет. Покупка даёт +50 печатей экспедиции.
+
+- **🛠 Знание всех рецептов (dev)**  
+  DEV-предмет. При покупке ремесленник изучает все рецепты.
+
+- **🛠 Гора трофеев (dev)**  
+  DEV-предмет. Покупка добавляет +50 охотничьих трофеев (для тестов Таверны §5.10).
+
+- **📜 Свиток лечения**  
+  Восстанавливает 20 HP. Стоимость: 5 маны, откат 3 хода (−1 за каждые 3 INT).
+
+- **📜 Большой свиток лечения**  
+  Восстанавливает 40 HP. Стоимость: 5 маны, откат 3 хода (−1 за каждые 3 INT).
+
+- **📜 Свиток «Хамелеон»**  
+  Самобафф уклонения: +15% на 2 хода (пробивает кап на +10%). Стоимость: 5 маны, откат 3 хода. Self-harm: −25% к вашему урону на длительность.
+
+- **📜 Свиток «Кулак ветра»**  
+  Только в ближнем бою. Отбрасывает цель на дальнюю дистанцию (если не в ловушке) и оглушает с шансом 50%. Стоимость: 5 маны, откат 3 хода. Self-harm: магия может отскочить и оглушить вас.
+
+- **📜 Свиток «Рассеивание»**  
+  −20% ко всем DR цели на 2 хода. Накладывается без ролла резистов. Стоимость: 5 маны, откат 3 хода. Self-harm: магия может ослабить вашу защиту тем же дебаффом.
+
+- **📜 Свиток призыва**  
+  Призывает в бой зоно-уместное существо на сторону читающего. Призываемые расы зависят от расы призывателя. Стоимость: 5 маны, откат 4 хода.
+
+- **📜 Свиток «Страх»**  
+  Цель в страхе на 2 хода: разрывает дистанцию, не использует сильные атаки и свитки. Игрок не может атаковать её в ближнем бою. Шанс наложения зависит от стойкости цели. Стоимость: 5 маны, откат 3 хода. Self-harm: вы сами в страхе и не можете атаковать в ближнем бою.
+
+- **🔥 Огненная смазка**  
+  Наносится на оружие. Каждый удар добавляет огненный урон, накапливая пул горения (BURN). 5 зарядов.
+
+- **🧊 Морозная смазка**  
+  Наносится на оружие. Каждый удар добавляет урон холодом, накапливая пул заморозки (FREEZE). 5 зарядов.
+
+- **☠️ Ядовитая смазка**  
+  Наносится на оружие. Каждый удар добавляет ядовитый урон, накапливая пул отравления (POISON). 5 зарядов.
+
+- **⚡ Громовая смазка**  
+  Наносится на оружие. Каждый удар добавляет урон молнией, накапливая пул электризации (SHOCK). 5 зарядов.
+
+- **💧 Скользкая смазка**  
+  Наносится на оружие. Каждый удар добавляет водный урон, накапливая пул намокания (WET). 5 зарядов.  
+  WET само по себе слабо, но усиливает яд и молнию.
+
+- **🪤 Простая ловушка**  
+  Бросается из пояса в цель. Накладывает ROOT — цель не может менять дистанцию (FAR↔CONTACT), но атаковать со своей позиции может. Побег: слабая попытка (1 ОД, шанс растёт от max(сила, ловкость)) или силовая (2 ОД, фикс. 90%). Каждый провал прибавляет в общий пул прогресса.
+
+- **🔥🪤 Огненная ловушка**  
+  ROOT (гарантировано) + Поджог с шансом 50% (режется резистом к огню). Крафт: простая ловушка + огненная смазка + 2 кристалла.
+
+- **❄️🪤 Морозная ловушка**  
+  ROOT (гарантировано) + Заморозка с шансом 50% (режется резистом к холоду). Крафт: простая ловушка + морозная смазка + 2 кристалла.
+
+- **☠️🪤 Ядовитая ловушка**  
+  ROOT (гарантировано) + Яд с шансом 50% (режется резистом к яду). Крафт: простая ловушка + яд. смазка + 2 кристалла.
+
+- **⚡🪤 Электрическая ловушка**  
+  ROOT (гарантировано) + Шок с шансом 50% (режется резистом к молнии). Крафт: простая ловушка + элект. смазка + 2 кристалла.
+
+- **💧🪤 Маслянная ловушка**  
+  ROOT (гарантировано) + Намокание с шансом 50% (режется резистом к воде). Крафт: простая ловушка + скользкое масло + 2 кристалла.
+
+- **🔥☠️🪤 Напалмовая ловушка**  
+  ROOT (гарантировано) + Напалм с шансом 50% (режется огнеустойчивостью). Урон за каждое ОД и панические штрафы. Крафт: простая ловушка + огн. смазка + яд. смазка + 5 кристаллов.
+
+- **❄️☠️🪤 Ловушка ледяных шипов**  
+  ROOT (гарантировано) + Ядовитая крошка с шансом 50% (режется морозостойкостью). Урон за ОД и снижение уклонения. Крафт: простая ловушка + мороз. смазка + яд. смазка + 5 кристаллов.
+
+- **⚡☠️🪤 Ядовитый разряд**  
+  ROOT (гарантировано) + Ядовитый заряд с шансом 50% (режется молниеустойчивостью). Шанс самоудара за каждое действие. Крафт: простая ловушка + элект. смазка + яд. смазка + 5 кристаллов.
+
+- **💧☠️🪤 Жидкий яд**  
+  ROOT (гарантировано) + Жидкий яд с шансом 50% (режется водостойкостью). Урон за каждое потраченное ОД. Крафт: простая ловушка + скользкое масло + яд. смазка + 5 кристаллов.
+
+- **Пояс**  
+  Пояс с 5 ячейками быстрого доступа для расходников.
+
+- **🔩 Металл**  
+  Металл для изготовления снаряжения.
+
+- **🪵 Дерево**  
+  Дерево для изготовления снаряжения.
+
+- **🧵 Кожа**  
+  Кожа для изготовления снаряжения.
+
+- **🧶 Ткань**  
+  Ткань для изготовления снаряжения.
+
+- **🦴 Кость**  
+  Кость для изготовления снаряжения.
+
+- **🥩 Мясо**  
+  Мясо для приготовления провианта в лагере. Не продаётся.
+
+- **💎 Кристалл**  
+  Кристалл для магических предметов.
+
+- **📜 Чертеж Кольчуги**  
+  Позволяет ремесленнику изготовить кольчугу.
+
+- **📜 Чертеж Латных доспехов**  
+  Позволяет ремесленнику изготовить латные доспехи.
+
+- **📜 Чертеж Двуручного топора**  
+  Позволяет ремесленнику изготовить двуручный топор.
+
+- **📜 Чертеж Короткого лука**  
+  Позволяет ремесленнику изготовить короткий лук.
+
+- **📜 Чертеж Боевого лука**  
+  Позволяет ремесленнику изготовить боевой лук.
+
+- **📜 Чертеж Арбалета**  
+  Позволяет ремесленнику изготовить арбалет.
+
+- **📜 Чертеж Кольца Воина**  
+  Позволяет ремесленнику изготовить Кольцо Воина (+1 к урону и +5 к здоровью).
+
+- **📜 Чертеж Кольца Ловкача**  
+  Позволяет ремесленнику изготовить Кольцо Ловкача (+1 к урону и +5 к увороту).
+
+- **📜 Чертеж Амулета Жизни**  
+  Позволяет ремесленнику изготовить Амулет Жизни (+25 HP).
+
+- **📜 Чертеж Амулета Маны**  
+  Позволяет ремесленнику изготовить Амулет Маны (+25 маны).
+
+- **📜 Чертеж Амулета Воина**  
+  Позволяет ремесленнику изготовить Амулет Воина (+урон, +защита).
+
+- **📜 Чертеж Амулета Ловкача**  
+  Позволяет ремесленнику изготовить Амулет Ловкача (+урон, +уворот).
+
+- **📜 Чертеж Амулета Оглушения**  
+  Позволяет ремесленнику изготовить Амулет Оглушения (артефакт: пассивка +2 защиты, активка: оглушение).
+
+- **📜 Чертеж Кольца Вампира**  
+  Позволяет ремесленнику изготовить Кольцо Вампира (артефакт: пассивка 15% вампиризм, активка: 50% вампиризм).
+
+- **📜 Чертеж Огненного Самоцвета**  
+  Позволяет ремесленнику изготовить Огненный Самоцвет (артефакт: пассивка 20% огненный шанс, активка: поджог).
+
+- **📜 Чертеж Ледяного Кристалла**  
+  Позволяет ремесленнику изготовить Ледяной Кристалл (артефакт: пассивка 20% ледяной шанс, активка: заморозка).
+
+- **📜 Чертеж Ядовитого Кристалла**  
+  Позволяет ремесленнику изготовить Ядовитый Кристалл (артефакт: пассивка 20% ядовитый шанс, активка: отравление).
+
+- **📜 Чертеж Кристалла Молний**  
+  Позволяет ремесленнику изготовить Кристалл Молний (артефакт: пассивка 20% молниеносный шанс, активка: шок).
+
+- **📜 Чертеж Водяного Кристалла**  
+  Позволяет ремесленнику изготовить Водяной Кристалл (артефакт: пассивка 20% водяной шанс, активка: намокание).
+
+- **📜 Чертёж Кинжала**  
+  Позволяет ремесленнику изготовить кинжал.
+
+- **📜 Чертёж Одноручного топора**  
+  Позволяет ремесленнику изготовить одноручный топор.
+
+- **📜 Чертёж Одноручной булавы**  
+  Позволяет ремесленнику изготовить одноручную булаву.
+
+- **📜 Чертёж Двуручного меча**  
+  Позволяет ремесленнику изготовить двуручный меч.
+
+- **📜 Чертёж Двуручной булавы**  
+  Позволяет ремесленнику изготовить двуручную булаву.
+
+- **📜 Чертёж: Огненная ловушка**  
+  Ремесленник сможет изготовить огненную ловушку (trap_basic + fire_oil + crystal × 2).
+
+- **📜 Чертёж: Морозная ловушка**  
+  Ремесленник сможет изготовить морозную ловушку (trap_basic + frost_oil + crystal × 2).
+
+- **📜 Чертёж: Ядовитая ловушка**  
+  Ремесленник сможет изготовить ядовитую ловушку (trap_basic + venom_coating + crystal × 2).
+
+- **📜 Чертёж: Электрическая ловушка**  
+  Ремесленник сможет изготовить электрическую ловушку (trap_basic + shock_oil + crystal × 2).
+
+- **📜 Чертёж: Маслянная ловушка**  
+  Ремесленник сможет изготовить маслянную ловушку (trap_basic + slick_oil + crystal × 2).
+
+- **📜 Чертёж: Напалмовая ловушка**  
+  Ремесленник сможет изготовить напалмовую ловушку (trap_basic + fire_oil + venom_coating + crystal × 5).
+
+- **📜 Чертёж: Ловушка ледяных шипов**  
+  Ремесленник сможет изготовить ловушку ледяных шипов (trap_basic + frost_oil + venom_coating + crystal × 5).
+
+- **📜 Чертёж: Ядовитый разряд**  
+  Ремесленник сможет изготовить ловушку ядовитого разряда (trap_basic + shock_oil + venom_coating + crystal × 5).
+
+- **📜 Чертёж: Жидкий яд**  
+  Ремесленник сможет изготовить ловушку жидкого яда (trap_basic + slick_oil + venom_coating + crystal × 5).
+
+- **📜 Чертёж Баклера**  
+  Позволяет ремесленнику изготовить баклер.
+
+- **📜 Чертёж Башенного щита**  
+  Позволяет ремесленнику изготовить башенный щит.
+
+- **Кольцо Воина**  
+  Кольцо закалённого бойца. +10% к кровотечению, +5% к оглушению.
+
+- **Кольцо Ловкача**  
+  Кольцо проворного. Дарует грацию зверя.
+
+- **Амулет Жизни**  
+  Амулет, дарующий жизненную силу. Увеличивает запас здоровья.
+
+- **Амулет Маны**  
+  Амулет, усиливающий магическую энергию. Увеличивает запас маны.
+
+- **Амулет Воина**  
+  Амулет закалённого воина. +5% к кровотечению, +10% к оглушению.
+
+- **Амулет Ловкача**  
+  Амулет проворного разведчика. Усиливает атаки и помогает уклоняться от ударов.
+
+- **🏆 Охотничий трофей**  
+  Трофей, снятый с именного противника. Свидетельство опасного боя. Торговец скупает такие редкости — сдайте пачкой за 20 монет каждый.
+
+- **🔏 Печать экспедиции**  
+  Знак отличия покорителя глубин. Тратится на прокачку навыков экспедиции у торговца.
+
+- **📜 Свиток забвения характеристик**  
+  Сбрасывает все распределённые очки силы, ловкости и интеллекта в свободные. Применяется вне боя из окна навыков.
+
+- **📜 Свиток забвения навыков**  
+  Сбрасывает все навыки экспедиции до 0, возвращает все потраченные печати и снимает выбранные мастерские пути. Применяется вне боя из окна навыков.
+
+- **✨ Амулет Оглушения**  
+  Пассивка: +2 защиты. Активка: оглушение врага (3 стака, 1 ход). Кулдаун 3 хода. Риск: оглушение себя.
+
+- **✨ Кольцо Вампира**  
+  Пассивка: 40% шанс на удачный удар восстановить 60% урона оружия. Активка: высасывание — наносит и лечит на 50% от недостающего HP игрока. Кулдаун 4 хода. Риск: кровотечение.
+
+- **✨ Огненный Самоцвет**  
+  Пассивка: каждая атака наносит дополнительный огненный урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул поджога (порог 12). Активка: 3 стака BURN. Кулдаун 3 хода. Риск: ожог себя.
+
+- **✨ Ледяной Кристалл**  
+  Пассивка: каждая атака наносит дополнительный ледяной урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул заморозки (порог 12). Активка: 3 стака FREEZE. Кулдаун 3 хода. Риск: заморозка себя.
+
+- **✨ Ядовитый Кристалл**  
+  Пассивка: каждая атака наносит дополнительный ядовитый урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул отравления (порог 10). Активка: 3 стака POISON, 3 хода. Кулдаун 3 хода. Риск: отравление себя.
+
+- **✨ Кристалл Молний**  
+  Пассивка: каждая атака наносит дополнительный молниеносный урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул шока (порог 15). Активка: 3 стака SHOCK — −10 маны/стак или −5 HP. Кулдаун 3 хода. Риск: шок себя.
+
+- **✨ Водяной Кристалл**  
+  Пассивка: каждая атака наносит дополнительный водяной урон (60% от урона оружия) через DR врага, попавший в HP идёт в пул намокания (порог 10). Активка: 2 стака WET — −30% DR к молнии и яду. Кулдаун 3 хода. Риск: намокание себя.
