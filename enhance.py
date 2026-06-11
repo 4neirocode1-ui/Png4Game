@@ -67,12 +67,14 @@ def index_of(path):
     return path.stem.replace("icon_", "")
 
 
-def resolve_source():
+def resolve_source(opencv_dir=OPENCV_DIR):
+    from utils import list_icon_files
     if ENHANCE_INPUT_DIR.exists():
-        custom = sorted(ENHANCE_INPUT_DIR.glob("icon_*.png"))
+        custom = list_icon_files(ENHANCE_INPUT_DIR)
         if custom:
             return ENHANCE_INPUT_DIR, custom
-    return OPENCV_DIR, sorted(OPENCV_DIR.glob("icon_*.png"))
+    opencv_dir = Path(opencv_dir)
+    return opencv_dir, list_icon_files(opencv_dir)
 
 
 def build_review_canvas(orig, soft, hard, name, scale=4):
@@ -119,8 +121,8 @@ def review_one(orig, soft, hard, name):
         print(P.UNKNOWN_KEY.format(key=key))
 
 
-def save_variant(rgba, name, preset):
-    target_dir = OUTPUT_DIR / preset
+def save_variant(rgba, name, preset, output_dir=OUTPUT_DIR):
+    target_dir = Path(output_dir) / preset
     target_dir.mkdir(parents=True, exist_ok=True)
     path = target_dir / f"icon_{name}.png"
     cv2.imwrite(str(path), rgba)
@@ -147,14 +149,14 @@ def prompt_mode():
         print(P.MENU_INVALID)
 
 
-def process(mode):
-    src_dir, paths = resolve_source()
+def process(mode, opencv_dir=OPENCV_DIR, output_dir=OUTPUT_DIR):
+    src_dir, paths = resolve_source(opencv_dir)
 
     if not paths:
-        print(P.NO_ICONS.format(enhance=ENHANCE_INPUT_DIR, opencv=OPENCV_DIR))
+        print(P.NO_ICONS.format(enhance=ENHANCE_INPUT_DIR, opencv=opencv_dir))
         return
 
-    print(P.HEADER.format(src=src_dir, count=len(paths), dst=OUTPUT_DIR, mode=mode))
+    print(P.HEADER.format(src=src_dir, count=len(paths), dst=output_dir, mode=mode))
 
     saved = 0
     skipped = 0
@@ -181,16 +183,16 @@ def process(mode):
                 print(P.SKIPPED.format(name=name))
                 continue
             for preset in sorted(choice):
-                save_variant(variants[preset], name, preset)
+                save_variant(variants[preset], name, preset, output_dir)
                 saved += 1
                 print(P.SAVED.format(name=name, preset=preset))
         elif mode == "all":
             for preset, params in PRESETS.items():
-                save_variant(unsharp(orig, **params), name, preset)
+                save_variant(unsharp(orig, **params), name, preset, output_dir)
                 saved += 1
             print(P.SAVED_ALL.format(name=name, presets=", ".join(PRESETS.keys())))
         else:
-            save_variant(unsharp(orig, **PRESETS[mode]), name, mode)
+            save_variant(unsharp(orig, **PRESETS[mode]), name, mode, output_dir)
             saved += 1
             print(P.SAVED.format(name=name, preset=mode))
 

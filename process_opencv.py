@@ -1,66 +1,100 @@
 """
-ПОЛНЫЙ АВТОМАТ: берёт СЫРОЙ лист с белым фоном (и даже с подписями), сам
-убирает фон в прозрачность, отбрасывает подписи, нарезает иконки и приводит
-к единому размеру.
+Нарезка листа на отдельные иконки 256×256. Сам определяет тип листа:
 
-Лист кладётся в input/1.png прямо из браузера / Nano Banana — фотошоп-подготовка
-больше не нужна.
+  • Лист с ПРОЗРАЧНЫМ фоном (RGBA, фон уже убран в редакторе) → режем по альфе.
+    Твоя альфа уважается как есть: фон и почищенные внутренние области (полость
+    лука и т.п.) остаются прозрачными, белого не появляется.
 
-Шаги:
-  1. build_global_alpha — сплошной белый фон → прозрачность (с мягким краем).
-  2. find_icons       — детект силуэтов; подписи отсекаются по форме (aspect).
-  3. на каждую иконку — чистка: чужие компоненты, прилипшие подписи,
-                        внутренние белёсые просветы (лук/кольцо), мелкие дыры.
-  4. fit_to_canvas    — центрирование на квадрате TARGET_SIZE.
+  • Сырой лист с НЕПРОЗРАЧНЫМ белым фоном → убираем белый заливкой от краёв и
+    режем по силуэту (старый путь для листов прямо из Nano Banana).
+
+Шаги (оба пути): детект иконок → чистка (чужие компоненты/подписи, мелкие дыры
+от антиалиасинга) → центрирование на квадрате TARGET_SIZE.
+
+punch_internal_white ОТКЛЮЧЁН (2026-06-11) — сверлил дыры в бликах стали;
+замкнутые окна (петля арбалета, дырки колец) маскируются вручную. См. architecture.md.
 """
 import time
 import cv2
 
 from utils import (
-    INPUT_FILE, TARGET_SIZE, PADDING,
-    load_image, build_global_alpha, find_icons,
-    keep_main_component, punch_internal_white, fill_small_holes,
+    INPUT_FILE, TARGET_SIZE, PADDING, OUTPUT_FORMAT,
+    load_image, build_global_alpha, find_icons, find_icons_by_alpha,
+    keep_main_component, fill_small_holes,
     fit_to_canvas, save_icons,
 )
 
 OUTPUT_DIR = "output/opencv"
 
+# Доля полностью прозрачных пикселей, выше которой считаем фон убранным в альфу.
+ALPHA_BG_MIN_FRACTION = 0.02
 
-def process():
-    img = load_image(INPUT_FILE)
-    bgr = img[:, :, :3]
 
-    t_start = time.time()
+def _has_transparent_bg(src) -> bool:
+    """Фон убран в прозрачность? — у листа есть альфа и заметная её доля == 0."""
+    if src is None or src.ndim != 3 or src.shape[2] != 4:
+        return False
+    return float((src[:, :, 3] == 0).mean()) > ALPHA_BG_MIN_FRACTION
 
-    # 1. Глобальная альфа: убираем сплошной белый фон.
-    alpha_full = build_global_alpha(img)
 
-    # 2. Детект иконок по тёмному силуэту; подписи отсекаются по форме.
-    bboxes, labels = find_icons(img)
-    print(f"🔍 Найдено иконок: {len(bboxes)}")
+def _finalize_icon(roi_bgr, roi_a, target_size=TARGET_SIZE):
+    """Общий хвост: чистка альфы и центрирование на холсте target_size."""
+    roi_a = keep_main_component(roi_a)
+    roi_a = fill_small_holes(roi_a)
+    b, g, r = cv2.split(roi_bgr)
+    rgba = cv2.merge([b, g, r, roi_a])
+    return fit_to_canvas(rgba, target_size, PADDING)
+
+
+def _slice_by_alpha(src, target_size=TARGET_SIZE):
+    """Путь для чистого RGBA: режем по исходной альфе, RGB не трогаем."""
+    bgr = src[:, :, :3]
+    alpha = src[:, :, 3]
+    bboxes, labels = find_icons_by_alpha(alpha)
+    print(f"🔍 Лист с прозрачным фоном — режем по альфе. Иконок: {len(bboxes)}")
 
     icons = []
     total = len(bboxes)
     for i, (x, y, w, h, label_id) in enumerate(bboxes):
-        roi_bgr = bgr[y:y + h, x:x + w]
-        roi_a = alpha_full[y:y + h, x:x + w].copy()
-
+        roi_a = alpha[y:y + h, x:x + w].copy()
         # Зануляем чужие компоненты, попавшие в bbox этой иконки.
         roi_labels = labels[y:y + h, x:x + w]
         roi_a[(roi_labels != 0) & (roi_labels != label_id)] = 0
-
-        # Чистка: прилипшие подписи/мусор → внутренние белёсые просветы
-        # (полость лука, дырка кольца) → мелкие дыры от антиалиасинга.
-        roi_a = keep_main_component(roi_a)
-        roi_a = punch_internal_white(roi_bgr, roi_a)
-        roi_a = fill_small_holes(roi_a)
-
-        b, g, r = cv2.split(roi_bgr)
-        rgba = cv2.merge([b, g, r, roi_a])
-        icons.append(fit_to_canvas(rgba, TARGET_SIZE, PADDING))
+        icons.append(_finalize_icon(bgr[y:y + h, x:x + w], roi_a, target_size))
         print(f"  [{i + 1:>2}/{total}] {w:>3}×{h:<3}px  pos=({x},{y})")
+    return icons
 
-    save_icons(icons, OUTPUT_DIR)
+
+def _slice_by_color(input_file=INPUT_FILE, target_size=TARGET_SIZE):
+    """Путь для сырого листа с белым фоном: заливка фона + детект по силуэту."""
+    img = load_image(input_file)
+    bgr = img[:, :, :3]
+
+    alpha_full = build_global_alpha(img)
+    bboxes, labels = find_icons(img)
+    print(f"🔍 Лист с белым фоном — убираем фон и режем по силуэту. Иконок: {len(bboxes)}")
+
+    icons = []
+    total = len(bboxes)
+    for i, (x, y, w, h, label_id) in enumerate(bboxes):
+        roi_a = alpha_full[y:y + h, x:x + w].copy()
+        roi_labels = labels[y:y + h, x:x + w]
+        roi_a[(roi_labels != 0) & (roi_labels != label_id)] = 0
+        icons.append(_finalize_icon(bgr[y:y + h, x:x + w], roi_a, target_size))
+        print(f"  [{i + 1:>2}/{total}] {w:>3}×{h:<3}px  pos=({x},{y})")
+    return icons
+
+
+def process(input_file=INPUT_FILE, output_dir=OUTPUT_DIR,
+            target_size=TARGET_SIZE, fmt=OUTPUT_FORMAT):
+    raw = cv2.imread(str(input_file), cv2.IMREAD_UNCHANGED)
+    if raw is None:
+        raise FileNotFoundError(f"Файл не найден: '{input_file}'")
+
+    t_start = time.time()
+    icons = (_slice_by_alpha(raw, target_size) if _has_transparent_bg(raw)
+             else _slice_by_color(input_file, target_size))
+    save_icons(icons, str(output_dir), fmt)
     print(f"⏱  Всего: {time.time() - t_start:.2f}с")
 
 

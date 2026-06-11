@@ -5,7 +5,9 @@ from pathlib import Path
 
 # ==================== НАСТРОЙКИ ====================
 INPUT_FILE = "input/1.png"
-TARGET_SIZE = 256        # Исходник для игры: крупно (показ в игре 48-64)
+TARGET_SIZE = 256        # Сторона квадрата итоговой иконки, px (256 — стандарт для иконок;
+                         # 512 — боевые спрайты, 1024 — портреты; см. asset_pipeline_brief).
+OUTPUT_FORMAT = "webp"   # Что сохранять: "webp" (по умолч., в 2-4 раза легче PNG) | "png" | "both".
 PADDING = 4              # Отступ от края холста (пропорц. размеру)
 MIN_ICON_SIZE = 35       # Минимум пикселей по ширине и высоте
 MIN_ICON_AREA = 500      # Минимум закрашенных пикселей в компоненте (отсекает мусорные штрихи)
@@ -23,7 +25,7 @@ DETECT_GRAY_HI = 230     # Любой пиксель темнее этого —
 
 
 def load_image(path=INPUT_FILE):
-    img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
     if img is None:
         raise FileNotFoundError(f"Файл не найден: '{path}'")
     if img.ndim == 2:
@@ -303,15 +305,62 @@ def fit_to_canvas(rgba, target_size=TARGET_SIZE, padding=PADDING):
     return canvas
 
 
-def save_icons(icons, output_dir, also_webp=True):
+def trim_edges(rgba, px=1, outer=True, inner=True):
+    """
+    Чистый срез края силуэта на px пикселей. НЕ эрозия всего объекта — трогаются
+    только выбранные кромки, цвет (BGR) не меняется.
+
+    outer=True — ВНЕШНИЙ контур (кромка у фона): убирает светлую кайму на тёмном UI.
+    inner=True — ВНУТРЕННИЙ край (вокруг полостей): растит проём на px, снимая кайму
+                 по его кромке — углы тетивы лука, петля арбалета, ободок кольца.
+
+    Алгоритм: берём прозрачные области нужного типа (внешний фон — компоненты,
+    касающиеся края картинки; полости — замкнутые внутри), раздуваем их на px
+    внутрь силуэта и этому кольцу ставим α=0.
+    """
+    a = rgba[:, :, 3]
+    h, w = a.shape[:2]
+    fg = a > 0
+
+    transp = (a == 0).astype(np.uint8)
+    num, labels, stats, _ = cv2.connectedComponentsWithStats(transp, connectivity=4)
+    cut = np.zeros((h, w), np.uint8)
+    for i in range(1, num):
+        x, y, bw, bh, _area = stats[i]
+        touches = (x == 0 or y == 0 or x + bw == w or y + bh == h)
+        if (touches and outer) or (not touches and inner):
+            cut[labels == i] = 1
+
+    grown = cv2.dilate(cut, np.ones((3, 3), np.uint8), iterations=px).astype(bool)
+    ring = grown & fg
+
+    out = rgba.copy()
+    out[ring, 3] = 0
+    return out
+
+
+def save_icons(icons, output_dir, fmt=OUTPUT_FORMAT):
+    """Сохраняет иконки в выбранном формате: webp | png | both."""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
+    want_png = fmt in ("png", "both")
+    want_webp = fmt in ("webp", "both")
     for i, icon in enumerate(icons):
-        png_path = os.path.join(output_dir, f"icon_{i:03d}.png")
-        cv2.imwrite(png_path, icon)
-        if also_webp:
-            _save_webp(os.path.join(output_dir, f"icon_{i:03d}.webp"), icon)
-    extra = " (+ WebP)" if also_webp else ""
-    print(f"✅ Сохранено {len(icons)} иконок{extra} → '{output_dir}'")
+        base = os.path.join(output_dir, f"icon_{i:03d}")
+        if want_png:
+            cv2.imwrite(base + ".png", icon)
+        if want_webp:
+            _save_webp(base + ".webp", icon)
+    print(f"✅ Сохранено {len(icons)} иконок ({fmt}) → '{output_dir}'")
+
+
+def list_icon_files(folder):
+    """Иконки icon_* в папке (png и/или webp), по одной на индекс — png в приоритете.
+    Нужно, чтобы trim/analyze/enhance работали независимо от выбранного формата."""
+    folder = Path(folder)
+    by_stem = {}
+    for p in sorted(folder.glob("icon_*.png")) + sorted(folder.glob("icon_*.webp")):
+        by_stem.setdefault(p.stem, p)   # png встречается первым → выигрывает
+    return [by_stem[s] for s in sorted(by_stem)]
 
 
 def _save_webp(path, bgra_icon, quality=90):
