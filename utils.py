@@ -3,6 +3,39 @@ import numpy as np
 import os
 from pathlib import Path
 
+
+def imread_unicode(path, flags=cv2.IMREAD_UNCHANGED):
+    """Читает картинку, корректно работая с путями в кириллице/Unicode.
+
+    cv2.imread на Windows открывает файл через узкую (ANSI) кодировку и
+    возвращает None для путей с не-ASCII символами ('Артефакты.png' и т.п.).
+    Обход: читаем байты файла через numpy (np.fromfile держит Unicode-пути)
+    и декодируем уже из памяти. Возвращает None, если файл не прочитан/битый.
+    """
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)
+    except OSError:
+        return None
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, flags)
+
+
+def imwrite_unicode(path, img):
+    """Пишет картинку, корректно работая с путями в кириллице/Unicode.
+
+    Симметрично imread_unicode: cv2.imwrite тоже спотыкается о не-ASCII пути.
+    Кодируем в память по расширению файла и сбрасываем байты через tofile
+    (держит Unicode-пути). Возвращает True/False как cv2.imwrite.
+    """
+    path = str(path)
+    ext = os.path.splitext(path)[1] or ".png"
+    ok, buf = cv2.imencode(ext, img)
+    if not ok:
+        return False
+    buf.tofile(path)
+    return True
+
 # ==================== НАСТРОЙКИ ====================
 INPUT_FILE = "input/1.png"
 TARGET_SIZE = 256        # Сторона квадрата итоговой иконки, px (256 — стандарт для иконок;
@@ -11,7 +44,23 @@ OUTPUT_FORMAT = "webp"   # Что сохранять: "webp" (по умолч., 
 PADDING = 4              # Отступ от края холста (пропорц. размеру)
 MIN_ICON_SIZE = 35       # Минимум пикселей по ширине и высоте
 MIN_ICON_AREA = 500      # Минимум закрашенных пикселей в компоненте (отсекает мусорные штрихи)
-MAX_ASPECT_RATIO = 3.0   # Отсекает текстовые подписи (длинные и узкие)
+MAX_ASPECT_RATIO = 3.0   # Длиннее этого по сторонам — кандидат в «подписи»; решает
+                         # уже проверка площади (LONG_ITEM_MIN_FRACTION), а не сам порог.
+LONG_ITEM_MIN_FRACTION = 0.30   # Длинный компонент (aspect>MAX_ASPECT_RATIO) оставляем
+                         # как НАСТОЯЩИЙ ПРЕДМЕТ (молния/копьё/посох/лук/склянка), если
+                         # его площадь ≥ этой доли от медианной иконки листа. Текстовая
+                         # подпись мелкая (~5% медианы) — отсекается; длинный предмет
+                         # весит 40–127% и проходит. Доля от медианы, а не абсолют, —
+                         # листы разного масштаба (медиана от ~5k до ~170k px).
+MERGE_RADIUS = 18        # Склейка кусков ОДНОЙ иконки: компоненты, между которыми
+                         # зазор < 2×MERGE_RADIUS (≈36px), считаются одной иконкой.
+                         # Снежинка = центр + отлетевшие лучи; оглушение = вихрь +
+                         # звёзды; броня = осколки. Каждый кусок «подращиваем» на
+                         # MERGE_RADIUS px и смотрим, кто слипся. Условие корректности:
+                         # зазор МЕЖДУ иконками должен быть больше, чем ВНУТРИ иконки.
+                         # На листах с иконками впритык (зазор < 36px) соседи сольются —
+                         # такие листы либо генерить с бо́льшими промежутками, либо
+                         # доводить вручную. 0 = выключить склейку (старое поведение).
 MAX_HOLE_AREA = 8        # Замкнутые дыры МЕНЬШЕ стольких px → закрашиваются (пиксели
                          # антиалиасинга — 1-4px). Порог абсолютный, не процентный:
                          # шум не растёт с размером иконки. Стоит ровно под границей
@@ -25,7 +74,7 @@ DETECT_GRAY_HI = 230     # Любой пиксель темнее этого —
 
 
 def load_image(path=INPUT_FILE):
-    img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+    img = imread_unicode(path, cv2.IMREAD_UNCHANGED)
     if img is None:
         raise FileNotFoundError(f"Файл не найден: '{path}'")
     if img.ndim == 2:
@@ -87,43 +136,118 @@ def build_global_alpha(img, tolerance=BG_TOLERANCE,
     return alpha
 
 
-def find_icons_by_alpha(alpha, min_size=MIN_ICON_SIZE, min_area=MIN_ICON_AREA,
-                        max_aspect=MAX_ASPECT_RATIO):
+def _group_by_proximity(labels, stats, valid_ids, radius=MERGE_RADIUS):
     """
-    Находит иконки как связные компоненты по альфа-каналу.
+    Склеивает компоненты-куски ОДНОЙ иконки в группы по близости.
+
+    Иконку часто рисуют из несвязанных кусков: снежинка = центр + отлетевшие
+    лучи, оглушение = вихрь + звёзды, броня = осколки. Связные компоненты дают
+    по иконке-куску, а нужна целая. Решение: каждый кусок «подращиваем» на
+    `radius` px (морфо-дилатация) — куски, между которыми зазор < 2×radius,
+    слипаются; смотрим, что слиплось, и группируем исходные (НЕ раздутые)
+    компоненты по разросшимся пятнам.
+
+    Возвращает список (x, y, w, h, frozenset(label_ids)) — union-bbox группы и
+    набор её компонент. radius<=0 → склейки нет (каждый кусок отдельной иконкой).
+    """
+    if not valid_ids:
+        return []
+    if radius <= 0:
+        out = []
+        for i in valid_ids:
+            x, y, w, h, _ = stats[i]
+            out.append((int(x), int(y), int(w), int(h), frozenset([i])))
+        return out
+
+    valid_mask = np.isin(labels, valid_ids).astype(np.uint8)
+    k = 2 * radius + 1
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
+    grown = cv2.dilate(valid_mask, kernel)
+    _, glabels = cv2.connectedComponents(grown, connectivity=8)
+
+    members = {}  # метка разросшейся группы -> список исходных компонент
+    for i in valid_ids:
+        ys, xs = np.where(labels == i)
+        g = int(glabels[ys[0], xs[0]])
+        members.setdefault(g, []).append(i)
+
+    out = []
+    for ids in members.values():
+        x0 = min(stats[i][0] for i in ids)
+        y0 = min(stats[i][1] for i in ids)
+        x1 = max(stats[i][0] + stats[i][2] for i in ids)
+        y1 = max(stats[i][1] + stats[i][3] for i in ids)
+        out.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0), frozenset(ids)))
+    return out
+
+
+def _select_valid_ids(num, stats, min_size, min_area, max_aspect,
+                      long_frac=LONG_ITEM_MIN_FRACTION):
+    """
+    Отбирает метки компонент-иконок по размеру/площади/вытянутости.
+
+    Длинные компоненты (aspect > max_aspect) — кандидаты в текстовые подписи,
+    но настоящий длинный ПРЕДМЕТ (молния, копьё, посох, лук, склянка) тоже
+    вытянут. Различаем по площади: подпись мелкая (~5% от обычной иконки),
+    предмет крупный (40–127%). Длинный оставляем, если его площадь ≥
+    long_frac × медианы «квадратных» иконок этого листа (масштаб у листов
+    разный, поэтому доля, а не абсолют). Если квадратных иконок нет вовсе —
+    эталона для «мелкого текста» нет, считаем все длинные предметами.
+    """
+    square, square_areas, longs = [], [], []
+    for i in range(1, num):
+        _x, _y, w, h, area = stats[i]
+        if w < min_size or h < min_size:
+            continue
+        if area < min_area:
+            continue
+        if max(w / h, h / w) > max_aspect:
+            longs.append((i, area))
+        else:
+            square.append(i)
+            square_areas.append(area)
+
+    valid = list(square)
+    if longs:
+        if square_areas:
+            cutoff = long_frac * float(np.median(square_areas))
+            valid += [i for i, area in longs if area >= cutoff]
+        else:
+            valid += [i for i, _ in longs]
+    return valid
+
+
+def find_icons_by_alpha(alpha, min_size=MIN_ICON_SIZE, min_area=MIN_ICON_AREA,
+                        max_aspect=MAX_ASPECT_RATIO, merge_radius=MERGE_RADIUS):
+    """
+    Находит иконки как связные компоненты по альфа-каналу + склейка кусков.
 
     Между иконками — alpha=0 (полностью прозрачно), внутри иконки — alpha>0.
     Подходит для исходника с чистой альфой (фон уже стёрт в фотошопе).
 
     Фильтр по `min_area` отсекает остатки от ластика — несколько висящих
     пикселей могут дать bbox правильного размера, но fill-фактор у такого
-    мусора ~3%, у настоящей иконки — 50%+.
+    мусора ~3%, у настоящей иконки — 50%+. Уцелевшие компоненты группируются
+    по близости (`_group_by_proximity`): отлетевшие куски одной иконки —
+    в одну группу.
 
-    Возвращает (bboxes, labels): bboxes — список (x, y, w, h, label_id),
-    labels — карта компонентов того же размера, что и картинка.
+    Возвращает (groups, labels): groups — список (x, y, w, h, frozenset(ids))
+    после склейки; labels — карта компонентов того же размера, что и картинка.
     """
     mask = (alpha > 0).astype(np.uint8)
     num, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
 
-    bboxes = []
-    for i in range(1, num):
-        x, y, w, h, area = stats[i]
-        if w < min_size or h < min_size:
-            continue
-        if area < min_area:
-            continue
-        if max(w / h, h / w) > max_aspect:
-            continue
-        bboxes.append((x, y, w, h, i))
-
-    bboxes.sort(key=lambda b: (b[1] // 90, b[0]))
-    return bboxes, labels
+    valid = _select_valid_ids(num, stats, min_size, min_area, max_aspect)
+    groups = _group_by_proximity(labels, stats, valid, merge_radius)
+    groups.sort(key=lambda b: (b[1] // 90, b[0]))
+    return groups, labels
 
 
-def find_icons(img, min_size=MIN_ICON_SIZE, max_aspect=MAX_ASPECT_RATIO,
-               gray_hi=DETECT_GRAY_HI):
+def find_icons(img, min_size=MIN_ICON_SIZE, min_area=MIN_ICON_AREA,
+               max_aspect=MAX_ASPECT_RATIO, gray_hi=DETECT_GRAY_HI,
+               merge_radius=MERGE_RADIUS):
     """
-    Находит каждую иконку как связную компоненту по gray-threshold.
+    Находит иконки как связные компоненты по gray-threshold + склейка кусков.
 
     Любой пиксель темнее `gray_hi` — часть иконки. Это намеренно широкая
     маска: захватывает не только обводку, но и полупрозрачную бахрому
@@ -132,10 +256,10 @@ def find_icons(img, min_size=MIN_ICON_SIZE, max_aspect=MAX_ASPECT_RATIO,
 
     Между иконкой и подписью идут чисто-белые строки (gray > gray_hi),
     поэтому подпись выделяется в отдельную компоненту и отбрасывается
-    фильтром aspect_ratio.
+    фильтром aspect_ratio (до склейки, чтобы подпись не прилипла к иконке).
 
-    Возвращает (bboxes, labels): bboxes — список (x, y, w, h, label_id),
-    labels — карта компонентов того же размера, что и картинка.
+    Возвращает (groups, labels): groups — список (x, y, w, h, frozenset(ids))
+    после склейки; labels — карта компонентов того же размера, что и картинка.
     """
     gray = cv2.cvtColor(img[:, :, :3], cv2.COLOR_BGR2GRAY)
     _, mask = cv2.threshold(gray, gray_hi, 255, cv2.THRESH_BINARY_INV)
@@ -144,18 +268,11 @@ def find_icons(img, min_size=MIN_ICON_SIZE, max_aspect=MAX_ASPECT_RATIO,
 
     num, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
 
-    bboxes = []
-    for i in range(1, num):
-        x, y, w, h, _area = stats[i]
-        if w < min_size or h < min_size:
-            continue
-        if max(w / h, h / w) > max_aspect:
-            continue
-        bboxes.append((x, y, w, h, i))
-
+    valid = _select_valid_ids(num, stats, min_size, min_area, max_aspect)
     # Построчно, слева направо. Шаг 90px — высота строки иконок на спрайтшите.
-    bboxes.sort(key=lambda b: (b[1] // 90, b[0]))
-    return bboxes, labels
+    groups = _group_by_proximity(labels, stats, valid, merge_radius)
+    groups.sort(key=lambda b: (b[1] // 90, b[0]))
+    return groups, labels
 
 
 def punch_internal_white(roi_bgr, roi_a, min_area=8, white_thr=220):
@@ -347,7 +464,7 @@ def save_icons(icons, output_dir, fmt=OUTPUT_FORMAT):
     for i, icon in enumerate(icons):
         base = os.path.join(output_dir, f"icon_{i:03d}")
         if want_png:
-            cv2.imwrite(base + ".png", icon)
+            imwrite_unicode(base + ".png", icon)
         if want_webp:
             _save_webp(base + ".webp", icon)
     print(f"✅ Сохранено {len(icons)} иконок ({fmt}) → '{output_dir}'")

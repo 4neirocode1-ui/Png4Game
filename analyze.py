@@ -18,7 +18,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from utils import list_icon_files
+from utils import list_icon_files, imread_unicode
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -115,7 +115,7 @@ def main(src=None):
     report = []
     flagged = 0
     for f in files:
-        img = cv2.imread(f, cv2.IMREAD_UNCHANGED)
+        img = imread_unicode(f, cv2.IMREAD_UNCHANGED)
         if img is None or img.ndim != 3 or img.shape[2] != 4:
             continue
         m = analyze_icon(img)

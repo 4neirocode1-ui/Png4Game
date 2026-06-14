@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 
 import prompts as P
+from utils import imread_unicode, imwrite_unicode
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -125,7 +126,7 @@ def save_variant(rgba, name, preset, output_dir=OUTPUT_DIR):
     target_dir = Path(output_dir) / preset
     target_dir.mkdir(parents=True, exist_ok=True)
     path = target_dir / f"icon_{name}.png"
-    cv2.imwrite(str(path), rgba)
+    imwrite_unicode(str(path), rgba)
     return path
 
 
@@ -163,7 +164,7 @@ def process(mode, opencv_dir=OPENCV_DIR, output_dir=OUTPUT_DIR):
 
     for path in paths:
         name = index_of(path)
-        orig = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+        orig = imread_unicode(str(path), cv2.IMREAD_UNCHANGED)
         if orig is None or orig.ndim != 3 or orig.shape[2] != 4:
             print(P.NOT_RGBA.format(name=path.name))
             continue

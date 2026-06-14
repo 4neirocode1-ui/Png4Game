@@ -29,6 +29,7 @@ OUTPUT_DIR = ROOT / "output"
 SETTINGS_FILE = ROOT / "settings.json"
 IMAGE_EXT = {".png", ".webp", ".jpg", ".jpeg", ".bmp"}
 DEFAULT_SETTINGS = {"size": 256, "format": "webp"}
+ALL = "__ALL__"   # маркер «обрабатывать все листы по очереди»
 
 
 # ---------- настройки (размер, формат) ----------
@@ -94,7 +95,7 @@ def list_sources():
 
 
 def select_source():
-    """Возвращает выбранный файл-исходник или None, если в input/ ничего нет."""
+    """Возвращает выбранный файл-исходник, маркер ALL (все листы) или None."""
     sources = list_sources()
     if not sources:
         print("В папке input/ нет картинок. Положи туда лист(ы) с иконками "
@@ -106,16 +107,37 @@ def select_source():
     print("\nЧто в папке input/:")
     for i, s in enumerate(sources, 1):
         print(f"  [{i}] {s.name}")
+    print(f"  [A] ВСЕ листы сразу ({len(sources)} шт.) — по очереди")
     while True:
-        choice = input("Выбери номер исходника: ").strip()
+        choice = input("Выбери номер исходника (или A — все): ").strip().lower()
+        if choice in ("a", "а", "all", "все"):   # лат. a и кир. а
+            return ALL
         if choice.isdigit() and 1 <= int(choice) <= len(sources):
             return sources[int(choice) - 1]
-        print("Не понял. Введи номер из списка.")
+        print("Не понял. Введи номер из списка или A.")
 
 
 def work_dir_for(src):
     """Папка результатов для исходника: output/<имя_без_расширения>/."""
     return OUTPUT_DIR / src.stem
+
+
+def targets(src):
+    """Список (исходник, рабочая_папка) для обработки: один лист или все по очереди."""
+    if src == ALL:
+        return [(s, work_dir_for(s)) for s in list_sources()]
+    return [(src, work_dir_for(src))]
+
+
+def run_for_all(src, fn):
+    """Применяет действие fn(исходник, рабочая_папка) ко всем целям по очереди.
+    В пакетном режиме печатает шапку [n/всего] перед каждым листом."""
+    tgts = targets(src)
+    multi = len(tgts) > 1
+    for idx, (s, work) in enumerate(tgts, 1):
+        if multi:
+            print(f"\n===== [{idx}/{len(tgts)}] {s.name} =====")
+        fn(s, work)
 
 
 # ---------- действия ----------
@@ -131,7 +153,8 @@ def _trim(work, fmt, outer, inner, dst_name, label):
     """Срез края у нарезанных иконок. Читает <work>/opencv/, пишет в <work>/<dst_name>/
     в текущем формате — оригинал не трогает, повтор не накапливает срез."""
     import cv2
-    from utils import trim_edges, _save_webp, list_icon_files
+    from utils import (trim_edges, _save_webp, list_icon_files,
+                       imread_unicode, imwrite_unicode)
     src = work / "opencv"
     files = list_icon_files(src)
     if not files:
@@ -142,13 +165,13 @@ def _trim(work, fmt, outer, inner, dst_name, label):
     want_png = fmt in ("png", "both")
     want_webp = fmt in ("webp", "both")
     for f in files:
-        img = cv2.imread(str(f), cv2.IMREAD_UNCHANGED)
+        img = imread_unicode(str(f), cv2.IMREAD_UNCHANGED)
         if img is None or img.ndim != 3 or img.shape[2] != 4:
             continue
         out = trim_edges(img, px=1, outer=outer, inner=inner)
         base = dst / f.stem
         if want_png:
-            cv2.imwrite(str(base) + ".png", out)
+            imwrite_unicode(str(base) + ".png", out)
         if want_webp:
             _save_webp(str(base) + ".webp", out)
     print(f"Готово: {len(files)} иконок ({label}, {fmt}) → {dst}")
@@ -167,14 +190,6 @@ def trim_inner(work, settings):
           dst_name="trimmed_inner", label="внутренние кромки")
 
 
-def sharpen(work):
-    """Резкость (enhance): спрашивает режим и обрабатывает нарезанные иконки."""
-    import enhance
-    enhance.process(enhance.prompt_mode(),
-                    opencv_dir=work / "opencv",
-                    output_dir=work / "enhanced")
-
-
 def analyze_result(work):
     """Анализ результата: отчёт о проблемных местах (ничего не меняет)."""
     import analyze
@@ -190,14 +205,20 @@ def open_work(work):
 
 # ---------- меню ----------
 
-def menu_text(src, work, settings):
+def menu_text(src, settings):
+    if src == ALL:
+        head = f"Исходник: ВСЕ листы ({len(list_sources())} шт.) — по очереди"
+        res = "Результаты: output\\<имя каждого листа>\\"
+    else:
+        head = f"Исходник: {src.name}"
+        res = f"Результаты: output\\{src.stem}\\"
     return f"""
 ============================================
            ИКОНКИ — обработка листа
 ============================================
 
-  Исходник: {src.name}
-  Результаты: output\\{work.name}\\
+  {head}
+  {res}
   Размер: {settings['size']}px   Формат: {settings['format']}
 
   [1] Нарезать иконки из листа
@@ -218,25 +239,27 @@ def main():
     if src is None:
         input("\nEnter — выход...")
         return
-    work = work_dir_for(src)
 
     while True:
-        print(menu_text(src, work, settings))
+        print(menu_text(src, settings))
         choice = input("Введи цифру и нажми Enter: ").strip()
         if choice == "1":
-            cut_icons(src, work, settings)
+            run_for_all(src, lambda s, w: cut_icons(s, w, settings))
             input("\nГотово. Enter — вернуться в меню...")
         elif choice == "2":
-            trim_outer(work, settings)
+            run_for_all(src, lambda s, w: trim_outer(w, settings))
             input("\nEnter — вернуться в меню...")
         elif choice == "3":
-            trim_inner(work, settings)
+            run_for_all(src, lambda s, w: trim_inner(w, settings))
             input("\nEnter — вернуться в меню...")
         elif choice == "4":
-            sharpen(work)
+            import enhance
+            mode = enhance.prompt_mode()   # режим спрашиваем один раз на всю очередь
+            run_for_all(src, lambda s, w: enhance.process(
+                mode, opencv_dir=w / "opencv", output_dir=w / "enhanced"))
             input("\nEnter — вернуться в меню...")
         elif choice == "5":
-            analyze_result(work)
+            run_for_all(src, lambda s, w: analyze_result(w))
             input("\nEnter — вернуться в меню...")
         elif choice == "6":
             edit_settings(settings)
@@ -245,9 +268,12 @@ def main():
             new_src = select_source()
             if new_src is not None:
                 src = new_src
-                work = work_dir_for(src)
         elif choice == "8":
-            open_work(work)
+            if src == ALL:
+                OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+                os.startfile(OUTPUT_DIR)
+            else:
+                open_work(work_dir_for(src))
         elif choice == "0":
             return
         else:
