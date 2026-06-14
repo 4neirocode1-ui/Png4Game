@@ -16,20 +16,22 @@ import os
 import sys
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 import numpy as np
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 
 ROOT = Path(__file__).resolve().parent
 os.chdir(ROOT)
 
 # Переиспользуем готовые хелперы консоли и движок — единый источник логики.
 from launcher import (list_sources, load_settings, save_settings,
-                      work_dir_for, OUTPUT_DIR, defringe_icons)
+                      work_dir_for, OUTPUT_DIR, INPUT_DIR, defringe_icons)
 from utils import list_icon_files
 from process_opencv import process
 import enhance
+import rename
+import analyze
 
 THUMB = 100          # сторона миниатюры, px
 COLS = 5             # миниатюр в ряду
@@ -56,6 +58,7 @@ STAGES = [
     ("opencv", "Нарезка"),
     ("defringed", "Чистый край"),
     ("enhanced", "Резкость"),
+    ("named", "Имена"),
 ]
 
 
@@ -76,9 +79,12 @@ class IconWorkshop:
         self.img_x = 0.0           # координата изображения в левом-верхнем углу канвы
         self.img_y = 0.0
         self._pan = None           # старт перетаскивания
+        self.templates = {}        # подпись шаблона -> путь .names.txt
+        self.assign = {}           # путь листа (str) -> {stem иконки: имя} (метки)
         root.title(BASE_TITLE)
         root.geometry("980x640")
         self._build()
+        self.refresh_templates()
         self.refresh_sheets()
 
     # ---------- построение окна ----------
@@ -171,6 +177,22 @@ class IconWorkshop:
         ttk.Checkbutton(opts, text="все листы",
                         variable=self.all_var).pack(side="left", padx=4)
 
+        # ряд привязки имён: какой блок каталога вешаем на выбранный лист.
+        # «Привязать» копирует шаблон списка имён в <лист>.names.txt — это и есть
+        # тот единственный выбор «этот лист = этот блок», без перепечатки имён.
+        names_bar = ttk.Frame(right)
+        names_bar.pack(fill="x", pady=(2, 0))
+        ttk.Label(names_bar, text="Каталог:").pack(side="left")
+        self.tmpl_var = tk.StringVar(value="")
+        self.tmpl_cb = ttk.Combobox(names_bar, textvariable=self.tmpl_var, width=34,
+                                    state="readonly", values=[])
+        self.tmpl_cb.pack(side="left", padx=(2, 6))
+        ttk.Button(names_bar, text="Привязать к листу",
+                   command=self.attach_names).pack(side="left", padx=3)
+        self.names_state = tk.StringVar(value="")
+        ttk.Label(names_bar, textvariable=self.names_state,
+                  foreground="#666").pack(side="left", padx=6)
+
         bar = ttk.Frame(right)
         bar.pack(fill="x", pady=(0, 2))
         ttk.Button(bar, text="Нарезать", command=self.cut).pack(side="left", padx=3)
@@ -178,6 +200,10 @@ class IconWorkshop:
                    command=self.do_defringe).pack(side="left", padx=3)
         ttk.Button(bar, text="Резкость",
                    command=self.do_sharpen).pack(side="left", padx=3)
+        ttk.Button(bar, text="Назвать",
+                   command=self.do_name).pack(side="left", padx=3)
+        ttk.Button(bar, text="Анализ исходника",
+                   command=self.do_analyze_source).pack(side="left", padx=3)
         ttk.Button(bar, text="Открыть папку",
                    command=self.open_folder).pack(side="left", padx=3)
 
@@ -204,7 +230,98 @@ class IconWorkshop:
             self.listbox.selection_set(keep)
 
     def on_select(self, _evt=None):
+        self.update_names_state()
         self.render()
+
+    def refresh_templates(self):
+        """Перечитать input/_names_templates/ в выпадашку каталога."""
+        self.templates = {rename.template_label(p): p
+                          for p in rename.list_name_templates(INPUT_DIR)}
+        self.tmpl_cb.configure(values=list(self.templates))
+
+    def update_names_state(self):
+        """Показать рядом с выпадашкой, привязан ли манифест к выбранному листу."""
+        s = self.selected_sheet()
+        if s is None:
+            self.names_state.set("")
+            return
+        npath = rename.names_path_for(s)
+        if npath.exists():
+            n = len(rename.load_names(npath))
+            self.names_state.set(f"манифест есть ({n} имён)")
+        else:
+            self.names_state.set("манифеста нет")
+
+    # ---------- метки имён (назначение иконка→имя для шумных листов) ----------
+
+    def assign_for(self, sheet):
+        """Словарь меток {stem: имя} для листа (создаётся при первом обращении)."""
+        return self.assign.setdefault(str(sheet), {})
+
+    def _sheet_pool(self, sheet):
+        """Пул имён листа = список из привязанного манифеста (или пусто)."""
+        npath = rename.names_path_for(sheet)
+        return rename.load_names(npath) if npath.exists() else []
+
+    def _grid_title(self, sheet, label, files, pool, amap, assignable, named):
+        base = f"{sheet.name} — {label.lower()} ({len(files)} иконок"
+        if named or not assignable:
+            return base + ")"
+        if not pool:
+            return base + "; каталог не привязан — привяжи и жми «Назвать»)"
+        used = sum(1 for st in amap if amap[st] and st in {f.stem for f in files})
+        tail = f"; каталог: {len(pool)}; назначено {used}/{len(pool)}"
+        extra = len(files) - len(pool)
+        if extra > 0:
+            tail += f"; лишних {extra}"
+        elif extra < 0:
+            tail += f"; не хватает {-extra}"
+        return base + tail + ")"
+
+    def set_assign(self, sheet, stem, name):
+        """Повесить имя на иконку. Имя «переезжает»: снимается с прежней иконки —
+        так дубль-имя невозможно. name=None — снять имя (выкинуть из named)."""
+        amap = self.assign_for(sheet)
+        if name is None:
+            amap.pop(stem, None)
+        else:
+            for st in [s for s, n in amap.items() if n == name and s != stem]:
+                amap.pop(st, None)
+            amap[stem] = name
+        self.render()
+
+    def icon_menu(self, event, sheet, stem):
+        """ПКМ по иконке: список имён каталога этого листа + «Удалить иконку»."""
+        menu = tk.Menu(self.root, tearoff=0)
+        pool = self._sheet_pool(sheet)
+        amap = self.assign_for(sheet)
+        cur = amap.get(stem)
+        if pool:
+            used = set(amap.values())
+            for name in pool:
+                mark = "● " if name == cur else "   "
+                busy = "   (занято)" if name in used and name != cur else ""
+                menu.add_command(label=mark + name + busy,
+                                 command=lambda n=name: self.set_assign(sheet, stem, n))
+            menu.add_separator()
+            if cur:
+                menu.add_command(label="✕ снять имя",
+                                 command=lambda: self.set_assign(sheet, stem, None))
+        else:
+            menu.add_command(label="(сначала привяжи каталог)", state="disabled")
+        menu.add_separator()
+        menu.add_command(label="🗑 Удалить иконку",
+                         command=lambda: self.delete_icon_cell(sheet, stem))
+        menu.tk_popup(event.x_root, event.y_root)
+
+    def delete_icon_cell(self, sheet, stem):
+        """Снести иконку (обе версии) из текущей стадии-папки. Метку тоже убираем."""
+        folder = self.stage_folder(sheet)
+        removed = rename.delete_icon(folder, stem)
+        self.assign_for(sheet).pop(stem, None)
+        self.refresh_sheets()
+        self.render()
+        self.status.set(f"Удалено: {', '.join(removed) if removed else stem}")
 
     def render(self):
         """Перерисовать правую область: «Исходник» — в лупе, прочие стадии — сеткой."""
@@ -234,12 +351,28 @@ class IconWorkshop:
         wbg = self.widget_bg()
         self.grid_frame.configure(background=wbg)
 
-        label = dict(STAGES)[self.stage_var.get()]
-        files = list_icon_files(self.stage_folder(sheet))
-        self.title_var.set(f"{sheet.name} — {label.lower()} ({len(files)} иконок)")
+        stage = self.stage_var.get()
+        named = stage == "named"
+        assignable = stage in ("opencv", "defringed", "enhanced")
+        label = dict(STAGES)[stage]
+        # На стадии «Имена» файлы названы слугами — подписываем именем, а не индексом.
+        files = (rename.list_named_files(self.stage_folder(sheet)) if named
+                 else list_icon_files(self.stage_folder(sheet)))
+
+        pool = self._sheet_pool(sheet) if assignable else []
+        amap = self.assign_for(sheet)
+        # Чистый лист (число иконок = числу имён) и меток ещё нет → раскладываем по
+        # порядку САМИ; правишь только проблемные. Шумной лист не трогаем — там вручную.
+        if assignable and pool and not amap and len(files) == len(pool):
+            for f, name in zip(files, pool):
+                amap[f.stem] = name
+
+        self.title_var.set(self._grid_title(sheet, label, files, pool, amap,
+                                            assignable, named))
         if not files:
-            tk.Label(self.grid_frame, background=wbg,
-                     text="Здесь пусто — сделай этот шаг кнопкой снизу.").grid(
+            hint = ("Имён ещё нет — привяжи шаблон каталога и нажми «Назвать»."
+                    if named else "Здесь пусто — сделай этот шаг кнопкой снизу.")
+            tk.Label(self.grid_frame, background=wbg, text=hint).grid(
                 row=0, column=0, padx=10, pady=10)
         for i, f in enumerate(files):
             im = Image.open(f).convert("RGBA")
@@ -254,7 +387,24 @@ class IconWorkshop:
                      lambda e, p=f, t=f"{sheet.name} — {f.name}":
                      self.open_view(Image.open(p).convert("RGBA"),
                                     from_grid=True, title=t))
-            tk.Label(cell, text=f"{i:03d}", background=wbg, fg="#888").pack()
+            if named:
+                caption, fg = f.stem, "#888"
+            elif assignable:
+                # ПКМ по иконке → меню имён этого листа + «Удалить».
+                assigned = amap.get(f.stem)
+                caption = assigned if assigned else f"#{i:03d}  —"
+                fg = "#2e7d32" if assigned else "#888"
+                for w in (lbl, cell):
+                    w.bind("<Button-3>",
+                           lambda e, sh=sheet, st=f.stem: self.icon_menu(e, sh, st))
+            else:
+                caption, fg = f"{i:03d}", "#888"
+            cap = tk.Label(cell, text=caption, background=wbg, fg=fg,
+                           wraplength=THUMB)
+            cap.pack()
+            if assignable:
+                cap.bind("<Button-3>",
+                         lambda e, sh=sheet, st=f.stem: self.icon_menu(e, sh, st))
         # вернуть прокрутку сетки (после лупы scrollregion был обнулён)
         self.grid_frame.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -455,9 +605,13 @@ class IconWorkshop:
                         else f"Готово ({label}): {sheets[0].name}")
 
     def cut(self):
-        self._run("нарезка", lambda sh: process(
-            input_file=sh, output_dir=work_dir_for(sh) / "opencv",
-            target_size=self.settings["size"], fmt=self.settings["format"]))
+        # Новая нарезка меняет содержимое icon_NNN → старые метки этого листа
+        # больше не валидны, сбрасываем их (чистый лист авто-разметится заново).
+        def _cut(sh):
+            self.assign.pop(str(sh), None)
+            process(input_file=sh, output_dir=work_dir_for(sh) / "opencv",
+                    target_size=self.settings["size"], fmt=self.settings["format"])
+        self._run("нарезка", _cut)
 
     def do_defringe(self):
         self._run("чистка края",
@@ -468,6 +622,124 @@ class IconWorkshop:
         self._run(f"резкость:{preset}", lambda sh: enhance.process(
             preset, opencv_dir=work_dir_for(sh) / "opencv",
             output_dir=work_dir_for(sh) / "enhanced"))
+
+    # ---------- именование (универсальный слой rename) ----------
+
+    def attach_names(self):
+        """Скопировать выбранный шаблон каталога в манифест выбранного листа."""
+        s = self.selected_sheet()
+        if s is None:
+            self.status.set("Выбери лист слева.")
+            return
+        label = self.tmpl_var.get()
+        if not label or label not in self.templates:
+            self.status.set("Выбери блок каталога в выпадашке «Каталог».")
+            return
+        dst = rename.attach_template(self.templates[label], s)
+        self.update_names_state()
+        self.status.set(f"Привязан «{label}» → {dst.name}. Теперь «Назвать».")
+
+    def _name_source_folder(self, sheet):
+        """Откуда брать иконки под имена: текущая стадия-результат (явный выбор),
+        а с не-иконочных стадий (Исходник/Имена) — самая ЧИСТАЯ готовая: defringe,
+        иначе сырая нарезка. Чтобы случайно не назвать по сырью с вкладки «Имена»."""
+        st = self.stage_var.get()
+        if st in ("opencv", "defringed", "enhanced"):
+            return self.stage_folder(sheet)
+        work = work_dir_for(sheet)
+        defr = work / "defringed"
+        return defr if list_icon_files(defr) else work / "opencv"
+
+    def _source_label(self, src):
+        """Человеческая подпись источника именования для строки статуса."""
+        if src.name == "opencv":
+            return "нарезка"
+        if src.name == "defringed":
+            return "чистый край"
+        if src.parent.name == "enhanced":
+            return f"резкость:{src.name}"
+        return src.name
+
+    def do_name(self):
+        """Назвать иконки выбранного листа (или всех).
+        Есть метки (ручное назначение) → раскладываем по ним (порядок не важен);
+        иначе чистый лист → позиционно по манифесту. При успехе показываем «Имена»."""
+        sheets = (list(self.sheet_paths) if self.all_var.get()
+                  else ([self.selected_sheet()] if self.selected_sheet() else []))
+        if not sheets:
+            self.status.set("Выбери лист слева (или включи «все листы»).")
+            return
+
+        done = skipped = failed = 0
+        last = ""
+        for i, sh in enumerate(sheets, 1):
+            npath = rename.names_path_for(sh)
+            if not npath.exists():
+                skipped += 1
+                last = f"«{sh.name}»: манифеста нет — привяжи шаблон."
+                continue
+            self.status.set(f"[{i}/{len(sheets)}] имена: «{sh.name}»…")
+            self.root.update_idletasks()
+            src = self._name_source_folder(sh)
+            dst = work_dir_for(sh) / "named"
+            amap = self.assign_for(sh)
+            if amap:
+                ok, msg = rename.apply_mapping(src, dst, amap)
+            else:
+                ok, msg = rename.apply_names(src, dst, rename.load_names(npath))
+            last = f"«{sh.name}»: {msg} [источник: {self._source_label(src)}]"
+            done += ok
+            failed += not ok
+
+        self.refresh_sheets()
+        self.update_names_state()
+        if len(sheets) == 1:
+            self.status.set(last)
+        else:
+            self.status.set(f"Имена — готово {done}, пропущено {skipped}, "
+                            f"ошибок {failed}.")
+        if done:
+            self.stage_var.set("named")
+            self.render()
+
+    # порог площади кляксы (px), выше которого красим в красный (вероятный косяк),
+    # ниже — в жёлтый (скорее блик стали — обычно НЕ трогать).
+    WHITE_RED_MIN = 25
+
+    def do_analyze_source(self):
+        """Подсветить подозрительные белые кляксы прямо на ИСХОДНИКЕ (в лупе).
+        Исходный файл НЕ трогается — рисуем только на копии в памяти."""
+        s = self.selected_sheet()
+        if s is None:
+            self.status.set("Выбери лист слева.")
+            return
+        clusters, _size, transp = analyze.scan_source_white(s)
+        if transp < 0.02:
+            self.status.set("Лист с белым фоном — сначала убери фон в редакторе "
+                            "(скан про подготовленные RGBA-исходники).")
+            return
+
+        overlay = Image.open(s).convert("RGBA").copy()   # копия — оригинал цел
+        dr = ImageDraw.Draw(overlay, "RGBA")
+        big = 0
+        for x, y, w, h, area in clusters:
+            red = area >= self.WHITE_RED_MIN
+            big += red
+            color = (255, 40, 40, 255) if red else (255, 180, 0, 235)
+            p = 3
+            dr.rectangle([x - p, y - p, x + w + p, y + h + p],
+                         outline=color, width=3)
+        self.bg_var.set("checker")                       # шахматка — видно прозрачность
+        self.canvas.configure(background=self.widget_bg())
+        self.open_view(overlay, from_grid=False,
+                       title=f"{s.name} — анализ исходника (файл не изменён)")
+        if not clusters:
+            self.status.set("Чисто: непрозрачно-белых клякс не найдено. Исходник не изменён.")
+        else:
+            self.status.set(
+                f"Клякс: {len(clusters)} (красных {big} — проверь, остаток фона/окно; "
+                f"жёлтых {len(clusters) - big} — скорее блики). Крупнейшая "
+                f"{clusters[0][4]}px. Исходник НЕ изменён.")
 
     def open_folder(self):
         """Открыть папку текущей стадии выбранного листа (или корень output/)."""

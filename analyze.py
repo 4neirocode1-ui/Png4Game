@@ -98,6 +98,39 @@ def flags(m):
     return f
 
 
+def scan_source_white(sheet_path, white_pure=WHITE_PURE, min_area=6):
+    """Подозрительные НЕПРОЗРАЧНО-белые кляксы на ИСХОДНОМ листе.
+
+    Для проверки подготовки исходника (путь А — фон убран в прозрачность):
+    непрозрачный пиксель у самого белого — это остаток фона, незакрытое окно
+    (петля арбалета, дырка кольца) ИЛИ блик стали. Код их не различает (доказано
+    замером, см. architecture.md) — поэтому только ПОКАЗЫВАЕТ, решает глаз.
+
+    НИЧЕГО НЕ ПИШЕТ И НЕ МЕНЯЕТ — читает файл и считает в памяти. Возвращает
+    (clusters, (W,H), transp_frac): clusters — (x,y,w,h,area), крупные первыми;
+    transp_frac — доля прозрачного (мало → лист с белым фоном, скан не про него).
+    """
+    raw = imread_unicode(str(sheet_path), cv2.IMREAD_UNCHANGED)
+    if raw is None:
+        return [], (0, 0), 0.0
+    if raw.ndim == 2:
+        raw = cv2.cvtColor(raw, cv2.COLOR_GRAY2BGRA)
+    elif raw.shape[2] == 3:
+        raw = cv2.cvtColor(raw, cv2.COLOR_BGR2BGRA)
+    h, w = raw.shape[:2]
+    a = raw[:, :, 3]
+    transp_frac = float((a == 0).mean())
+
+    minc = raw[:, :, :3].min(axis=2)
+    white = ((a > 0) & (minc > white_pure)).astype(np.uint8)
+    n, _lab, stats, _ = cv2.connectedComponentsWithStats(white, connectivity=8)
+    clusters = [(int(stats[i][0]), int(stats[i][1]), int(stats[i][2]),
+                 int(stats[i][3]), int(stats[i][4]))
+                for i in range(1, n) if stats[i][4] >= min_area]
+    clusters.sort(key=lambda c: c[4], reverse=True)
+    return clusters, (w, h), transp_frac
+
+
 def main(src=None):
     if src is None:
         src = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_DIR)

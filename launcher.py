@@ -179,6 +179,23 @@ def defringe_icons(work, settings):
     print(f"Готово: {len(files)} иконок (defringe, {fmt}) → {dst}")
 
 
+def name_icons(src, work, settings):
+    """Назвать нарезку по списку имён рядом с листом (универсальный слой rename).
+
+    Манифест <лист>.names.txt → раскладывает icon_NNN под этими именами в
+    <work>/named/. Нет манифеста — пропускаем (нечем именовать). Предохранитель
+    внутри apply_names: число имён ≠ числу иконок → НЕ пишем, печатаем расхождение.
+    Источник — нарезка opencv/ (имена вешаем на саму нарезку)."""
+    from rename import names_path_for, load_names, apply_names
+    npath = names_path_for(src)
+    if not npath.exists():
+        print(f"Нет манифеста имён «{npath.name}» рядом с листом — пропускаю. "
+              f"(Положи .names.txt: по имени в строке, или привяжи шаблон в окне.)")
+        return
+    ok, msg = apply_names(work / "opencv", work / "named", load_names(npath))
+    print(("✅ " if ok else "⚠ ") + msg)
+
+
 def analyze_result(work):
     """Анализ результата: отчёт о проблемных местах (ничего не меняет)."""
     import analyze
@@ -213,10 +230,11 @@ def menu_text(src, settings):
   [1] Нарезать иконки из листа
   [2] Чистка края (defringe — убирает кайму, не режет силуэт)
   [3] Добавить резкость (enhance)
-  [4] Анализ результата (отчёт о проблемах)
-  [5] Настройки (размер, формат)
-  [6] Сменить исходник
-  [7] Открыть папку с результатом
+  [4] Назвать иконки по списку (.names.txt → named/)
+  [5] Анализ результата (отчёт о проблемах)
+  [6] Настройки (размер, формат)
+  [7] Сменить исходник
+  [8] Открыть папку с результатом
   [0] Выход
 """
 
@@ -244,16 +262,19 @@ def main():
                 mode, opencv_dir=w / "opencv", output_dir=w / "enhanced"))
             input("\nEnter — вернуться в меню...")
         elif choice == "4":
-            run_for_all(src, lambda s, w: analyze_result(w))
+            run_for_all(src, lambda s, w: name_icons(s, w, settings))
             input("\nEnter — вернуться в меню...")
         elif choice == "5":
-            edit_settings(settings)
+            run_for_all(src, lambda s, w: analyze_result(w))
             input("\nEnter — вернуться в меню...")
         elif choice == "6":
+            edit_settings(settings)
+            input("\nEnter — вернуться в меню...")
+        elif choice == "7":
             new_src = select_source()
             if new_src is not None:
                 src = new_src
-        elif choice == "7":
+        elif choice == "8":
             if src == ALL:
                 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
                 os.startfile(OUTPUT_DIR)
@@ -262,7 +283,7 @@ def main():
         elif choice == "0":
             return
         else:
-            print("Не понял. Введи цифру из меню (0–7).")
+            print("Не понял. Введи цифру из меню (0–8).")
 
 
 if __name__ == "__main__":
