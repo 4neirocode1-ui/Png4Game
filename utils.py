@@ -70,6 +70,9 @@ BG_TOLERANCE = 5         # Допуск flood fill — узкий, не «про
 ALPHA_FADE_LO = 200      # Граничный пиксель min(B,G,R) ≤ этого → α=255
 ALPHA_FADE_HI = 250      # Граничный пиксель min(B,G,R) ≥ этого → α=0
 DETECT_GRAY_HI = 230     # Любой пиксель темнее этого — часть иконки при детекции
+DEFRINGE_REACH = 4       # Глубина перекраски края (defringe) в «кольцах» пикселей:
+                         # краевым полупрозрачным пикселям отдаём цвет ближайшего
+                         # непрозрачного. Хватает 1-2px каймы; 4 — с запасом.
 # ====================================================
 
 
@@ -422,38 +425,45 @@ def fit_to_canvas(rgba, target_size=TARGET_SIZE, padding=PADDING):
     return canvas
 
 
-def trim_edges(rgba, px=1, outer=True, inner=True):
+def defringe(rgba, reach=DEFRINGE_REACH):
     """
-    Чистый срез края силуэта на px пикселей. НЕ эрозия всего объекта — трогаются
-    только выбранные кромки, цвет (BGR) не меняется.
+    Деконтаминация края (defringe): убирает светлую кайму, НЕ срезая силуэт.
 
-    outer=True — ВНЕШНИЙ контур (кромка у фона): убирает светлую кайму на тёмном UI.
-    inner=True — ВНУТРЕННИЙ край (вокруг полостей): растит проём на px, снимая кайму
-                 по его кромке — углы тетивы лука, петля арбалета, ободок кольца.
+    Светлый ореол по контуру — это полупрозрачные пиксели сглаживания, чей цвет
+    замешан с белым фоном исходника; на тёмном UI они светятся. Решение: таким
+    краевым пикселям (0 < α < 250) ставим ЦВЕТ ближайшего НЕПРОЗРАЧНОГО пикселя,
+    а прозрачность (α) оставляем как есть. Силуэт, его размер и мягкость края не
+    меняются — меняется только цвет каймы (с белёсой на цвет тела иконки).
 
-    Алгоритм: берём прозрачные области нужного типа (внешний фон — компоненты,
-    касающиеся края картинки; полости — замкнутые внутри), раздуваем их на px
-    внутрь силуэта и этому кольцу ставим α=0.
+    Это замена прежнему trim_edges: тот РЕЗАЛ край (силуэт худел, кромка рвалась),
+    defringe только ПЕРЕКРАШИВАЕТ. Работает разом и на внешнем контуре, и вокруг
+    внутренних полостей — отдельные «внеш./внутр.» режимы больше не нужны.
+
+    Алгоритм: «известный» цвет (α ≥ 250) кольцами растёт наружу усреднением по
+    соседям (boxFilter), пока не накроет краевую кайму; затем этим цветом
+    заменяем BGR только у краевых пикселей.
     """
+    bgr = rgba[:, :, :3].astype(np.float32)
     a = rgba[:, :, 3]
-    h, w = a.shape[:2]
-    fg = a > 0
+    mask = (a >= 250).astype(np.float32)
+    if mask.sum() == 0:
+        return rgba.copy()
 
-    transp = (a == 0).astype(np.uint8)
-    num, labels, stats, _ = cv2.connectedComponentsWithStats(transp, connectivity=4)
-    cut = np.zeros((h, w), np.uint8)
-    for i in range(1, num):
-        x, y, bw, bh, _area = stats[i]
-        touches = (x == 0 or y == 0 or x + bw == w or y + bh == h)
-        if (touches and outer) or (not touches and inner):
-            cut[labels == i] = 1
+    filled = bgr.copy()
+    for _ in range(reach):
+        ksum = cv2.boxFilter(filled * mask[..., None], -1, (3, 3), normalize=False)
+        cnt = cv2.boxFilter(mask, -1, (3, 3), normalize=False)
+        new = (cnt > 0) & (mask == 0)
+        if not new.any():
+            break
+        avg = ksum / np.maximum(cnt[..., None], 1.0)
+        filled[new] = avg[new]
+        mask[new] = 1.0
 
-    grown = cv2.dilate(cut, np.ones((3, 3), np.uint8), iterations=px).astype(bool)
-    ring = grown & fg
-
-    out = rgba.copy()
-    out[ring, 3] = 0
-    return out
+    edge = (a > 0) & (a < 250)
+    out = bgr.copy()
+    out[edge] = filled[edge]
+    return np.dstack([np.clip(out, 0, 255).astype(np.uint8), a])
 
 
 def save_icons(icons, output_dir, fmt=OUTPUT_FORMAT):

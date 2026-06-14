@@ -6,8 +6,8 @@
 (chcp/BOM/cp1251 — именно те «кракозябры», см. architecture.md §1).
 
 В input/ можно класть НЕСКОЛЬКО листов со своими именами. При запуске выбираешь,
-с каким работать; результаты идут в output/<имя_файла>/ (внутри opencv/, trimmed/
-и т.д.). Размер и формат итоговых иконок настраиваются ([6]) и помнятся между
+с каким работать; результаты идут в output/<имя_файла>/ (внутри opencv/, defringed/
+и т.д.). Размер и формат итоговых иконок настраиваются ([5]) и помнятся между
 запусками (settings.json).
 
 Запуск: двойной клик по «Иконки.bat».
@@ -149,45 +149,34 @@ def cut_icons(src, work, settings):
             target_size=settings["size"], fmt=settings["format"])
 
 
-def _trim(work, fmt, outer, inner, dst_name, label):
-    """Срез края у нарезанных иконок. Читает <work>/opencv/, пишет в <work>/<dst_name>/
-    в текущем формате — оригинал не трогает, повтор не накапливает срез."""
+def defringe_icons(work, settings):
+    """Чистка края (defringe): перекрашивает светлую кайму, не срезая силуэт.
+    Читает <work>/opencv/, пишет в <work>/defringed/ — оригинал не трогает.
+    Заменяет прежние срезы внеш./внутр.: defringe чистит и контур, и полости."""
     import cv2
-    from utils import (trim_edges, _save_webp, list_icon_files,
+    from utils import (defringe, _save_webp, list_icon_files,
                        imread_unicode, imwrite_unicode)
     src = work / "opencv"
     files = list_icon_files(src)
     if not files:
         print(f"Нет нарезанных иконок в {src} — сначала нарежь лист [1].")
         return
-    dst = work / dst_name
+    dst = work / "defringed"
     dst.mkdir(parents=True, exist_ok=True)
+    fmt = settings["format"]
     want_png = fmt in ("png", "both")
     want_webp = fmt in ("webp", "both")
     for f in files:
         img = imread_unicode(str(f), cv2.IMREAD_UNCHANGED)
         if img is None or img.ndim != 3 or img.shape[2] != 4:
             continue
-        out = trim_edges(img, px=1, outer=outer, inner=inner)
+        out = defringe(img)
         base = dst / f.stem
         if want_png:
             imwrite_unicode(str(base) + ".png", out)
         if want_webp:
             _save_webp(str(base) + ".webp", out)
-    print(f"Готово: {len(files)} иконок ({label}, {fmt}) → {dst}")
-
-
-def trim_outer(work, settings):
-    """Срез ВНЕШНЕГО контура (безопасно, для всех иконок) → <work>/trimmed/."""
-    _trim(work, settings["format"], outer=True, inner=False,
-          dst_name="trimmed", label="внешний контур")
-
-
-def trim_inner(work, settings):
-    """Срез ВНУТРЕННИХ кромок полостей (для колец/петель; тончит тонкие линии)
-    → <work>/trimmed_inner/."""
-    _trim(work, settings["format"], outer=False, inner=True,
-          dst_name="trimmed_inner", label="внутренние кромки")
+    print(f"Готово: {len(files)} иконок (defringe, {fmt}) → {dst}")
 
 
 def analyze_result(work):
@@ -222,13 +211,12 @@ def menu_text(src, settings):
   Размер: {settings['size']}px   Формат: {settings['format']}
 
   [1] Нарезать иконки из листа
-  [2] Срез внешнего контура 1px (безопасно, всем)
-  [3] Срез внутренних кромок 1px (кольца/петли)
-  [4] Добавить резкость (enhance)
-  [5] Анализ результата (отчёт о проблемах)
-  [6] Настройки (размер, формат)
-  [7] Сменить исходник
-  [8] Открыть папку с результатом
+  [2] Чистка края (defringe — убирает кайму, не режет силуэт)
+  [3] Добавить резкость (enhance)
+  [4] Анализ результата (отчёт о проблемах)
+  [5] Настройки (размер, формат)
+  [6] Сменить исходник
+  [7] Открыть папку с результатом
   [0] Выход
 """
 
@@ -247,28 +235,25 @@ def main():
             run_for_all(src, lambda s, w: cut_icons(s, w, settings))
             input("\nГотово. Enter — вернуться в меню...")
         elif choice == "2":
-            run_for_all(src, lambda s, w: trim_outer(w, settings))
+            run_for_all(src, lambda s, w: defringe_icons(w, settings))
             input("\nEnter — вернуться в меню...")
         elif choice == "3":
-            run_for_all(src, lambda s, w: trim_inner(w, settings))
-            input("\nEnter — вернуться в меню...")
-        elif choice == "4":
             import enhance
             mode = enhance.prompt_mode()   # режим спрашиваем один раз на всю очередь
             run_for_all(src, lambda s, w: enhance.process(
                 mode, opencv_dir=w / "opencv", output_dir=w / "enhanced"))
             input("\nEnter — вернуться в меню...")
-        elif choice == "5":
+        elif choice == "4":
             run_for_all(src, lambda s, w: analyze_result(w))
             input("\nEnter — вернуться в меню...")
-        elif choice == "6":
+        elif choice == "5":
             edit_settings(settings)
             input("\nEnter — вернуться в меню...")
-        elif choice == "7":
+        elif choice == "6":
             new_src = select_source()
             if new_src is not None:
                 src = new_src
-        elif choice == "8":
+        elif choice == "7":
             if src == ALL:
                 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
                 os.startfile(OUTPUT_DIR)
@@ -277,7 +262,7 @@ def main():
         elif choice == "0":
             return
         else:
-            print("Не понял. Введи цифру из меню (0–8).")
+            print("Не понял. Введи цифру из меню (0–7).")
 
 
 if __name__ == "__main__":
