@@ -36,6 +36,7 @@ COLS = 5             # миниатюр в ряду
 SIZES = [256, 512, 1024]
 FORMATS = ["webp", "png", "both"]
 PRESETS = ["soft", "hard"]
+BASE_TITLE = "Иконки — мастерская"   # к нему дописывается статус в заголовке окна
 
 # Подложки-превью под прозрачные иконки (файлы не меняют — только показ).
 # Каждая ловит свой дефект: чёрная — белую бахрому, маджента — мусорные пиксели,
@@ -75,7 +76,7 @@ class IconWorkshop:
         self.img_x = 0.0           # координата изображения в левом-верхнем углу канвы
         self.img_y = 0.0
         self._pan = None           # старт перетаскивания
-        root.title("Иконки — мастерская")
+        root.title(BASE_TITLE)
         root.geometry("980x640")
         self._build()
         self.refresh_sheets()
@@ -180,9 +181,10 @@ class IconWorkshop:
         ttk.Button(bar, text="Открыть папку",
                    command=self.open_folder).pack(side="left", padx=3)
 
+        # статус показываем в ЗАГОЛОВКЕ окна (рамке) — не занимает место и
+        # ничего не перекрывает. Любой self.status.set(...) обновляет заголовок.
         self.status = tk.StringVar(value="")
-        tk.Label(self.root, textvariable=self.status, anchor="w",
-                 fg="#555").place(relx=0, rely=1.0, anchor="sw")
+        self.status.trace_add("write", self._status_to_title)
 
     # ---------- данные ----------
 
@@ -413,6 +415,10 @@ class IconWorkshop:
             self.render_view()
         else:
             self.render()
+
+    def _status_to_title(self, *_):
+        s = self.status.get()
+        self.root.title(BASE_TITLE if not s else f"{BASE_TITLE} — {s}")
 
     # ---------- действия ----------
 

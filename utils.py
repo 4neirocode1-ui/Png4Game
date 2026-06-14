@@ -445,12 +445,22 @@ def defringe(rgba, reach=DEFRINGE_REACH):
     """
     bgr = rgba[:, :, :3].astype(np.float32)
     a = rgba[:, :, 3]
-    mask = (a >= 250).astype(np.float32)
+    mask = (a >= 250).astype(np.float32)        # «известный» непрозрачный цвет
     if mask.sum() == 0:
         return rgba.copy()
 
+    # Кайму чистим ТОЛЬКО у настоящей прозрачности (контур + кромки полостей),
+    # а не любую полупрозрачность: webp сжатие «шевелит» альфу внутри иконки
+    # (255→248), и без этого ограничения defringe перекрасил бы пол-иконки.
+    transparent = (a == 0).astype(np.uint8)
+    near = cv2.dilate(transparent, np.ones((3, 3), np.uint8),
+                      iterations=reach).astype(bool)
+    edge = near & (a > 0) & (a < 250)
+    if not edge.any():
+        return rgba.copy()
+
     filled = bgr.copy()
-    for _ in range(reach):
+    for _ in range(reach + 1):
         ksum = cv2.boxFilter(filled * mask[..., None], -1, (3, 3), normalize=False)
         cnt = cv2.boxFilter(mask, -1, (3, 3), normalize=False)
         new = (cnt > 0) & (mask == 0)
@@ -460,7 +470,6 @@ def defringe(rgba, reach=DEFRINGE_REACH):
         filled[new] = avg[new]
         mask[new] = 1.0
 
-    edge = (a > 0) & (a < 250)
     out = bgr.copy()
     out[edge] = filled[edge]
     return np.dstack([np.clip(out, 0, 255).astype(np.uint8), a])
